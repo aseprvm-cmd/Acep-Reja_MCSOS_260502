@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+iso_root/
 *.o
 *.elf
 *.bin
@@ -7,8 +8,10 @@ build/
 *.img
 *.map
 *.log
+*.d
 .cache/
 .vscode/
+third_party/limine/
 
 # Editor and OS noise
 .vscode/
