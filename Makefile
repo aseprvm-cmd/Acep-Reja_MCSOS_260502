@@ -2,12 +2,12 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-# Variabel Direktori 
+# Variabel Direktori
 BUILD_DIR := build
 SMOKE_DIR := smoke
 META_DIR  := $(BUILD_DIR)/meta
 
-# Gabungan Phony Targets dari M0 dan M1 
+# Gabungan Phony Targets dari M0 dan M1
 .PHONY: help meta check smoke proof qemu-version qemu-probe repro test tree clean distclean
 
 help:
@@ -20,19 +20,19 @@ help:
 	@echo "  make qemu-probe   - Verify QEMU machine & OVMF path"
 	@echo "  make repro        - Run reproducibility audit"
 	@echo "  make test         - Run all M0/M1 validation suites"
-	@echo "  make tree         - Display repository structure [cite: 194]"
-	@echo "  make clean        - Remove generated artifacts [cite: 194]"
-	@echo "  make distclean    - Purge all build outputs [cite: 195]"
+	@echo "  make tree         - Display repository structure"
+	@echo "  make clean        - Remove generated artifacts"
+	@echo "  make distclean    - Purge all build outputs"
 
 # --- Target M0 (Sesuai Panduan PDF) ---
 
 meta:
 	@mkdir -p $(META_DIR)
-	@bash tools/check_env.sh 
+	@bash tools/check_env.sh
 
 check:
-	@bash tools/check_env.sh 
-	@shellcheck tools/check_env.sh 
+	@bash tools/check_env.sh
+	@shellcheck tools/check_env.sh
 
 smoke:
 	@mkdir -p $(BUILD_DIR)/smoke
@@ -45,16 +45,16 @@ smoke:
 		-Wall -Wextra -Werror \
 		-std=c17 \
 		-c $(SMOKE_DIR)/freestanding.c \
-		-o $(BUILD_DIR)/smoke/freestanding.o 
-	readelf -h $(BUILD_DIR)/smoke/freestanding.o | tee $(BUILD_DIR)/smoke/readelf-header.txt [cite: 192]
-	file $(BUILD_DIR)/smoke/freestanding.o | tee $(BUILD_DIR)/smoke/file.txt [cite: 193]
+		-o $(BUILD_DIR)/smoke/freestanding.o
+	readelf -h $(BUILD_DIR)/smoke/freestanding.o | tee $(BUILD_DIR)/smoke/readelf-header.txt
+	file $(BUILD_DIR)/smoke/freestanding.o | tee $(BUILD_DIR)/smoke/file.txt
 
 qemu-version:
-	@qemu-system-x86_64 --version [cite: 193]
-	@echo "QEMU exists. M0 does not boot a kernel image." [cite: 193]
+	@qemu-system-x86_64 --version
+	@echo "QEMU exists. M0 does not boot a kernel image."
 
 tree:
-	@tree -a -L 3 [cite: 194]
+	@tree -a -L 3
 
 # --- Target M1 (Otomasi Script Anda) ---
 
@@ -73,9 +73,9 @@ test: meta check smoke proof qemu-probe repro
 # --- Cleanup ---
 
 clean:
-	rm -rf $(BUILD_DIR)/smoke build/proof build/repro [cite: 194]
+	rm -rf $(BUILD_DIR)/smoke build/proof build/repro
 	@echo "OK: Cleaned generated artifacts."
 
 distclean:
-	rm -rf $(BUILD_DIR) 
+	rm -rf $(BUILD_DIR)
 	@echo "OK: Removed all build outputs."
