@@ -13,6 +13,7 @@ done
 [ -n "$OVMF_CODE" ] || { echo "FAIL: OVMF_CODE tidak ditemukan" >&2; exit 1; }
 [ -n "$OVMF_VARS" ] || { echo "FAIL: OVMF_VARS tidak ditemukan" >&2; exit 1; }
 cp "$OVMF_VARS" build/m3_debug_OVMF_VARS.fd
+# shellcheck disable=SC2093
 exec qemu-system-x86_64 \
     -machine q35 -m 256M -smp 1 -cpu qemu64 \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \

@@ -20,7 +20,7 @@ check 10 "audit script valid" bash -n tools/scripts/m3_audit_elf.sh
 check 20 "normal kernel build" make build
 check 10 "panic-test kernel build" make panic
 check 20 "ELF/disassembly audit" make audit
-check 10 "panic symbol exists" grep -q kernel_panic_at build/kernel.syms.txt
+check 10 "panic symbol exists" grep -q kernel_panic_at build/inspect/nm-symbols.txt
 check 10 "no undefined symbols" bash -c '! nm -u build/kernel.elf | grep .'
 check 10 "evidence collection" tools/scripts/m3_collect_evidence.sh evidence/M3
 
