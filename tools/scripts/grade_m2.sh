@@ -24,9 +24,9 @@ done
 grep -q 'Class:.*ELF64' build/inspect/readelf-header.txt
 grep -q 'Machine:.*Advanced Micro Devices X86-64' build/inspect/readelf-header.txt
 grep -q 'Entry point address:.*0xffffffff80000000' build/inspect/readelf-header.txt
-grep -q 'MCSOS 260502 M2 boot path entered' build/qemu-serial.log
-grep -q '\[M2\] early serial online' build/qemu-serial.log
-grep -q '\[M2\] kernel reached controlled halt loop' build/qemu-serial.log
+grep -q 'MCSOS 260502 M3 kernel entered' build/qemu-serial.log
+grep -q '\[M3\] selftest: basic invariants passed' build/qemu-serial.log
+grep -q '\[M3\] ready for QEMU smoke test and GDB audit' build/qemu-serial.log
 
 echo "OK: M2 local grading checks passed"
 chmod +x tools/scripts/grade_m2.sh

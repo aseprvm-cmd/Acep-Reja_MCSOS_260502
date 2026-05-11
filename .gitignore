@@ -1,6 +1,7 @@
 # Build artifacts
 build/
 iso_root/
+limine/
 *.o
 *.elf
 *.bin
@@ -9,6 +10,7 @@ iso_root/
 *.map
 *.log
 *.d
+*.disasm.txt
 .cache/
 .vscode/
 third_party/limine/

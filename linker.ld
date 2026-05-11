@@ -1,11 +1,12 @@
-OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
+OUTPUT_ARCH(i386:x86-64)
 ENTRY(kmain)
 
 PHDRS
 {
-    text PT_LOAD FLAGS(5);
-    rodata PT_LOAD FLAGS(4);
-    data PT_LOAD FLAGS(6);
+    text   PT_LOAD FLAGS(5);   /* R+X */
+    rodata PT_LOAD FLAGS(4);   /* R   */
+    data   PT_LOAD FLAGS(6);   /* R+W */
 }
 
 SECTIONS
@@ -30,8 +31,11 @@ SECTIONS
 
     .bss : ALIGN(4096)
     {
+        __bss_start = .;
         *(COMMON)
         *(.bss .bss.*)
+        . = ALIGN(8);
+        __bss_end = .;
     } :data
 
     __kernel_end = .;

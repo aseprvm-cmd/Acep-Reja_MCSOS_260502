@@ -49,7 +49,8 @@ CFLAGS := \
 	-Wall \
 	-Wextra \
 	-Werror \
-	-Ikernel/arch/x86_64/include
+	-Ikernel/arch/x86_64/include \
+	-Ikernel/include
 
 LDFLAGS := \
 	-nostdlib \
@@ -58,6 +59,11 @@ LDFLAGS := \
 	-T linker.ld \
 	-Map=$(BUILD_DIR)/kernel.map
 
+PANIC_CFLAGS := $(CFLAGS) -DMCSOS_M3_TRIGGER_PANIC=1
+
+PANIC_KERNEL := $(BUILD_DIR)/kernel.panic.elf
+PANIC_MAP    := $(BUILD_DIR)/kernel.panic.map
+
 # -----------------------------------------------------------------------------
 # Source & object M2
 # -----------------------------------------------------------------------------
@@ -65,6 +71,7 @@ KERNEL := $(BUILD_DIR)/kernel.elf
 MAP    := $(BUILD_DIR)/kernel.map
 SRC_C  := $(shell find $(KERNEL_DIR) -name '*.c' 2>/dev/null | LC_ALL=C sort)
 OBJ    := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC_C))
+PANIC_OBJ    := $(patsubst %.c,$(BUILD_DIR)/panic/%.o,$(SRC_C))
 
 # -----------------------------------------------------------------------------
 # Phony targets
@@ -75,6 +82,7 @@ OBJ    := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC_C))
         test \
         check-prev check-src check-scripts \
         build inspect image run debug \
+	panic audit \
         grade \
         clean distclean
 
@@ -220,10 +228,24 @@ run: image
 debug: image
 	@./tools/scripts/run_qemu_debug.sh
 
-# Full M2 pipeline: build + inspect + image + run + grade
-grade: check-src check-scripts build inspect image run
-	@./tools/scripts/grade_m2.sh
+# Build varian intentional panic
+panic: check-prev check-src $(PANIC_KERNEL)
 
+$(BUILD_DIR)/panic/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(PANIC_CFLAGS) -c $< -o $@
+
+$(PANIC_KERNEL): $(PANIC_OBJ) linker.ld
+	@mkdir -p $(BUILD_DIR)
+	$(LD) $(LDFLAGS) -Map=$(PANIC_MAP) -o $@ $(PANIC_OBJ)
+
+# Audit ELF dan disassembly
+audit: inspect panic
+	@./tools/scripts/m3_audit_elf.sh build/kernel.elf
+
+# Full M3 pipeline
+grade: check-src check-scripts build inspect image run
+	@./tools/scripts/grade_m3.sh
 # =============================================================================
 # Cleanup
 # =============================================================================
@@ -232,6 +254,7 @@ clean:
 		$(BUILD_DIR)/smoke \
 		$(BUILD_DIR)/proof \
 		$(BUILD_DIR)/repro \
+		$(BUILD_DIR)/panic \
 		$(BUILD_DIR)/kernel \
 		$(BUILD_DIR)/*.elf \
 		$(BUILD_DIR)/*.map \
