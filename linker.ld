@@ -1,42 +1,27 @@
-OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
-OUTPUT_ARCH(i386:x86-64)
-ENTRY(kmain)
-
-PHDRS
-{
-    text   PT_LOAD FLAGS(5);   /* R+X */
-    rodata PT_LOAD FLAGS(4);   /* R   */
-    data   PT_LOAD FLAGS(6);   /* R+W */
-}
+ENTRY(_start)
 
 SECTIONS
 {
     . = 0xffffffff80000000;
-    __kernel_start = .;
 
-    .text : ALIGN(4096)
-    {
+    .text : ALIGN(4096) {
         *(.text .text.*)
-    } :text
+    }
 
-    .rodata : ALIGN(4096)
-    {
+    .rodata : ALIGN(4096) {
         *(.rodata .rodata.*)
-    } :rodata
+    }
 
-    .data : ALIGN(4096)
-    {
+    .data : ALIGN(4096) {
         *(.data .data.*)
-    } :data
+    }
 
-    .bss : ALIGN(4096)
-    {
-        __bss_start = .;
+    .bss : ALIGN(4096) {
         *(COMMON)
         *(.bss .bss.*)
-        . = ALIGN(8);
-        __bss_end = .;
-    } :data
-
-    __kernel_end = .;
+        . = ALIGN(16);
+        __stack_bottom = .;
+        . += 65536;
+        __stack_top = .;
+    }
 }
