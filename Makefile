@@ -9,6 +9,7 @@ LD      := ld.lld
 READELF := readelf
 NM      := nm
 OBJDUMP := $(shell command -v llvm-objdump 2>/dev/null || echo objdump)
+HOSTCC  := cc
 
 # --------------------------------------------------------->
 # Direktori & Output
@@ -62,6 +63,20 @@ LDFLAGS := \
 	-T linker.ld
 
 # --------------------------------------------------------->
+# M6 — PMM flags
+# --------------------------------------------------------->
+M6_CFLAGS := \
+	-std=c17 \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-ffreestanding \
+	-fno-builtin \
+	-fno-stack-protector \
+	-mno-red-zone \
+	-Iinclude
+
+# --------------------------------------------------------->
 # Source & Object
 # --------------------------------------------------------->
 OBJS := \
@@ -72,12 +87,13 @@ OBJS := \
 	$(BUILD)/pic.o \
 	$(BUILD)/pit.o \
 	$(BUILD)/idt.o \
+	$(BUILD)/pmm.o \
 	$(BUILD)/kernel.o
 
 # --------------------------------------------------------->
 # Phony
 # --------------------------------------------------------->
-.PHONY: all build audit grade breakpoint clean distclean
+.PHONY: all build audit grade breakpoint check-m6 clean distclean
 
 # =========================================================>
 # Buat direktori build di awal
@@ -90,7 +106,7 @@ $(shell mkdir -p $(BUILD))
 all: build audit
 
 # =========================================================>
-# Build
+# Build M5
 # =========================================================>
 build: $(KERNEL)
 
@@ -107,7 +123,7 @@ breakpoint: CFLAGS += -DMCSOS_TEST_BREAKPOINT
 breakpoint: clean all
 
 # =========================================================>
-# Audit
+# Audit M5
 # =========================================================>
 audit: $(KERNEL)
 > $(READELF) -h $(KERNEL) > $(BUILD)/readelf-header.txt
@@ -124,7 +140,7 @@ audit: $(KERNEL)
 > grep -q 'hlt'   $(BUILD)/disassembly.txt
 
 # =========================================================>
-# Grade
+# Grade M5
 # =========================================================>
 grade: all
 > grep -q 'isr_stub_32'          $(BUILD)/symbols.txt
@@ -133,6 +149,23 @@ grade: all
 > grep -q 'timer_on_irq0'        $(BUILD)/symbols.txt
 > grep -q 'x86_64_trap_dispatch' $(BUILD)/symbols.txt
 > @echo "M5 static grade: PASS"
+
+# =========================================================>
+# M6 — PMM build dan test
+# =========================================================>
+$(BUILD)/pmm.o: src/pmm.c include/pmm.h include/types.h
+> $(CC) $(M6_CFLAGS) -c src/pmm.c -o $(BUILD)/pmm.o
+
+$(BUILD)/test_pmm_host: src/pmm.c tests/test_pmm_host.c include/pmm.h include/types.h
+> $(HOSTCC) -std=c17 -Wall -Wextra -Werror -Iinclude \
+>   src/pmm.c tests/test_pmm_host.c -o $(BUILD)/test_pmm_host
+
+check-m6: $(BUILD)/pmm.o $(BUILD)/test_pmm_host
+> ./$(BUILD)/test_pmm_host
+> $(NM) -u $(BUILD)/pmm.o | tee $(BUILD)/pmm.undefined.txt
+> test ! -s $(BUILD)/pmm.undefined.txt
+> $(OBJDUMP) -dr $(BUILD)/pmm.o > $(BUILD)/pmm.objdump.txt
+> @echo "M6 check: PASS"
 
 # =========================================================>
 # Cleanup
