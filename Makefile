@@ -77,6 +77,28 @@ M6_CFLAGS := \
 	-Iinclude
 
 # --------------------------------------------------------->
+# M7 — VMM flags
+# --------------------------------------------------------->
+M7_CFLAGS := \
+	-std=c17 \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-ffreestanding \
+	-fno-builtin \
+	-fno-stack-protector \
+	-mno-red-zone \
+	-Iinclude
+
+HOST_CFLAGS := \
+	-std=c17 \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-DMCSOS_HOST_TEST \
+	-Iinclude
+
+# --------------------------------------------------------->
 # Source & Object
 # --------------------------------------------------------->
 OBJS := \
@@ -88,17 +110,21 @@ OBJS := \
 	$(BUILD)/pit.o \
 	$(BUILD)/idt.o \
 	$(BUILD)/pmm.o \
+	$(BUILD)/vmm.o \
 	$(BUILD)/kernel.o
 
 # --------------------------------------------------------->
 # Phony
 # --------------------------------------------------------->
-.PHONY: all build audit grade breakpoint check-m6 clean distclean
+.PHONY: all build audit grade breakpoint \
+        check check-m6 check-m7 \
+        run-qemu-smoke run-qemu-gdb \
+        clean distclean
 
 # =========================================================>
 # Buat direktori build di awal
 # =========================================================>
-$(shell mkdir -p $(BUILD))
+$(shell mkdir -p $(BUILD) $(BUILD)/evidence)
 
 # =========================================================>
 # Default
@@ -106,7 +132,7 @@ $(shell mkdir -p $(BUILD))
 all: build audit
 
 # =========================================================>
-# Build M5
+# Build
 # =========================================================>
 build: $(KERNEL)
 
@@ -123,7 +149,7 @@ breakpoint: CFLAGS += -DMCSOS_TEST_BREAKPOINT
 breakpoint: clean all
 
 # =========================================================>
-# Audit M5
+# Audit
 # =========================================================>
 audit: $(KERNEL)
 > $(READELF) -h $(KERNEL) > $(BUILD)/readelf-header.txt
@@ -133,11 +159,13 @@ audit: $(KERNEL)
 > $(NM) -u $(KERNEL)      > $(BUILD)/undefined.txt
 > $(OBJDUMP) -d $(KERNEL) > $(BUILD)/disassembly.txt
 > test ! -s $(BUILD)/undefined.txt
-> grep -q 'lidt'  $(BUILD)/disassembly.txt
-> grep -q 'iretq' $(BUILD)/disassembly.txt
-> grep -q 'outb'  $(BUILD)/disassembly.txt
-> grep -q 'sti'   $(BUILD)/disassembly.txt
-> grep -q 'hlt'   $(BUILD)/disassembly.txt
+> grep -q 'lidt'   $(BUILD)/disassembly.txt
+> grep -q 'iretq'  $(BUILD)/disassembly.txt
+> grep -q 'outb'   $(BUILD)/disassembly.txt
+> grep -q 'sti'    $(BUILD)/disassembly.txt
+> grep -q 'hlt'    $(BUILD)/disassembly.txt
+> grep -q 'invlpg' $(BUILD)/disassembly.txt
+> grep -q 'cr3'    $(BUILD)/disassembly.txt
 
 # =========================================================>
 # Grade M5
@@ -166,6 +194,48 @@ check-m6: $(BUILD)/pmm.o $(BUILD)/test_pmm_host
 > test ! -s $(BUILD)/pmm.undefined.txt
 > $(OBJDUMP) -dr $(BUILD)/pmm.o > $(BUILD)/pmm.objdump.txt
 > @echo "M6 check: PASS"
+
+# =========================================================>
+# M7 — VMM build dan test
+# =========================================================>
+$(BUILD)/vmm.o: src/vmm.c include/vmm.h include/types.h
+> $(CC) $(M7_CFLAGS) -c src/vmm.c -o $(BUILD)/vmm.o
+
+$(BUILD)/test_vmm_host: src/vmm.c tests/test_vmm_host.c include/vmm.h include/types.h
+> $(HOSTCC) $(HOST_CFLAGS) src/vmm.c tests/test_vmm_host.c \
+>   -o $(BUILD)/test_vmm_host
+
+check-m7: $(BUILD)/vmm.o $(BUILD)/test_vmm_host
+> ./$(BUILD)/test_vmm_host
+> $(NM) -u $(BUILD)/vmm.o | tee $(BUILD)/vmm.undefined.txt
+> test ! -s $(BUILD)/vmm.undefined.txt
+> $(OBJDUMP) -dr $(BUILD)/vmm.o > $(BUILD)/vmm.objdump.txt
+> grep -q 'invlpg' $(BUILD)/vmm.objdump.txt
+> grep -q 'cr3'    $(BUILD)/vmm.objdump.txt
+> @echo "M7 check: PASS"
+
+# alias untuk preflight M7
+check: check-m7
+
+# =========================================================>
+# QEMU targets
+# =========================================================>
+run-qemu-smoke:
+> cp $(KERNEL) build/kernel.elf
+> bash tools/scripts/make_iso.sh
+> qemu-system-x86_64 -M q35 -m 512M \
+>   -cdrom build/mcsos.iso \
+>   -serial stdio \
+>   -no-reboot -no-shutdown || true
+
+run-qemu-gdb:
+> cp $(KERNEL) build/kernel.elf
+> bash tools/scripts/make_iso.sh
+> qemu-system-x86_64 -M q35 -m 512M \
+>   -cdrom build/mcsos.iso \
+>   -serial stdio \
+>   -no-reboot -no-shutdown \
+>   -S -s
 
 # =========================================================>
 # Cleanup
