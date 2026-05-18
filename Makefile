@@ -111,6 +111,7 @@ OBJS := \
 	$(BUILD)/idt.o \
 	$(BUILD)/pmm.o \
 	$(BUILD)/vmm.o \
+	$(BUILD)/kmem.o \
 	$(BUILD)/kernel.o
 
 # --------------------------------------------------------->
@@ -118,7 +119,7 @@ OBJS := \
 # --------------------------------------------------------->
 .PHONY: all build audit grade breakpoint \
         check check-m6 check-m7 \
-        run-qemu-smoke run-qemu-gdb \
+        run run-qemu-smoke run-qemu-gdb \
         clean distclean
 
 # =========================================================>
@@ -221,12 +222,13 @@ check: check-m7
 # QEMU targets
 # =========================================================>
 run-qemu-smoke:
+> mkdir -p build/m8
 > cp $(KERNEL) build/kernel.elf
 > bash tools/scripts/make_iso.sh
 > qemu-system-x86_64 -M q35 -m 512M \
 >   -cdrom build/mcsos.iso \
 >   -serial stdio \
->   -no-reboot -no-shutdown || true
+>   -no-reboot -no-shutdown 2>&1 | tee build/m8/qemu_m8.log || true
 
 run-qemu-gdb:
 > cp $(KERNEL) build/kernel.elf
@@ -237,6 +239,10 @@ run-qemu-gdb:
 >   -no-reboot -no-shutdown \
 >   -S -s
 
+run: build audit
+>   mkdir -p build/m8
+>   $(MAKE) run-qemu-smoke
+
 # =========================================================>
 # Cleanup
 # =========================================================>
@@ -245,3 +251,37 @@ clean:
 
 distclean: clean
 > rm -rf iso_root limine evidence
+
+# =========================================================>
+# M8 — KERNEL HEAP (kmem)
+# =========================================================>
+
+$(BUILD)/kmem.o: kernel/mm/kmem.c include/mcsos/kmem.h include/types.h   #>
+> $(CC) $(CFLAGS) -c kernel/mm/kmem.c -o $(BUILD)/kmem.o
+
+BUILD_DIR_M8 := build/m8
+
+.PHONY: m8-clean m8-kmem-host-test m8-kmem-freestanding m8-audit m8-all check-m8
+
+m8-clean:
+> rm -rf $(BUILD_DIR_M8)
+
+$(BUILD_DIR_M8):
+> mkdir -p $(BUILD_DIR_M8)
+
+m8-kmem-freestanding: | $(BUILD_DIR_M8)
+> $(CC) $(CFLAGS) -c kernel/mm/kmem.c -o $(BUILD_DIR_M8)/kmem.freestanding.o
+
+m8-kmem-host-test: | $(BUILD_DIR_M8)
+> $(HOSTCC) $(HOST_CFLAGS) tests/test_kmem.c kernel/mm/kmem.c -o $(BUILD_DIR_M8)/test_kmem
+> ./$(BUILD_DIR_M8)/test_kmem | tee $(BUILD_DIR_M8)/test_kmem.log
+
+m8-audit: m8-kmem-freestanding
+> $(NM) -u $(BUILD_DIR_M8)/kmem.freestanding.o | tee $(BUILD_DIR_M8)/nm_u.txt
+> test ! -s $(BUILD_DIR_M8)/nm_u.txt
+> $(READELF) -h $(BUILD_DIR_M8)/kmem.freestanding.o > $(BUILD_DIR_M8)/readelf_h.txt
+> $(OBJDUMP) -dr $(BUILD_DIR_M8)/kmem.freestanding.o > $(BUILD_DIR_M8)/kmem.objdump.txt
+
+m8-all: m8-kmem-host-test m8-audit
+
+check-m8: m8-all
