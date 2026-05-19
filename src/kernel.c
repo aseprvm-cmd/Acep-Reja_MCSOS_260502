@@ -6,6 +6,7 @@
 #include "serial.h"
 #include "pmm.h"
 #include "vmm.h"
+#include "mcsos/kmem.h"
 
 /* --------------------------------------------------------->
  * PMM M6
@@ -110,13 +111,50 @@ static void kernel_vmm_init(void) {
 }
 
 /* --------------------------------------------------------->
+ * M8 — Kernel Heap Bootstrap
+ * --------------------------------------------------------->
+ */
+#define M8_BOOT_HEAP_SIZE (64u * 1024u)
+static unsigned char m8_boot_heap[M8_BOOT_HEAP_SIZE] __attribute__((aligned(4096)));
+
+static void kernel_heap_init(void) {
+    int rc = kmem_init(m8_boot_heap, sizeof(m8_boot_heap));
+    if (rc != 0) {
+        serial_write_string("[m8] ERROR: kmem_init failed rc=");
+        serial_write_hex64((uint64_t)(unsigned int)rc);
+        serial_write_string("\n");
+        return;
+    }
+
+    void *probe = kmem_alloc(128);
+    if (probe == (void *)0) {
+        serial_write_string("[m8] ERROR: kmem_alloc probe failed\n");
+        return;
+    }
+    if (kmem_free_checked(probe) != 0) {
+        serial_write_string("[m8] ERROR: kmem_free_checked probe failed\n");
+        return;
+    }
+
+    kmem_stats_t st;
+    kmem_get_stats(&st);
+    serial_write_string("M8 kmem initialized: total=");
+    serial_write_hex64((uint64_t)st.total_bytes);
+    serial_write_string(" free=");
+    serial_write_hex64((uint64_t)st.free_bytes);
+    serial_write_string(" largest=");
+    serial_write_hex64((uint64_t)st.largest_free);
+    serial_write_string("\n");
+}
+
+/* --------------------------------------------------------->
  * kmain
  * --------------------------------------------------------->
  */
 void kmain(void) {
     cpu_cli();
     serial_init();
-    serial_write_string("MCSOS M7 boot\n");
+    serial_write_string("MCSOS M8 boot\n");
     serial_write_string("[MCSOS:M5] boot: external interrupt bring-up start\n");
     idt_init();
     serial_write_string("[MCSOS:M5] idt: loaded\n");
@@ -137,7 +175,8 @@ void kmain(void) {
 #endif
     kernel_memory_init();
     kernel_vmm_init();
-    serial_write_string("M7 ready for QEMU smoke test\n");
+    kernel_heap_init();
+    serial_write_string("M8 ready\n");
     for (;;) {
         cpu_hlt();
     }
