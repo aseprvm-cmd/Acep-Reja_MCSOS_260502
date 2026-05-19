@@ -7,6 +7,30 @@
 #include "pmm.h"
 #include "vmm.h"
 #include "mcsos/kmem.h"
+#include "mcsos_thread.h"
+
+static mcsos_scheduler_t g_sched;
+static mcsos_thread_t    g_boot_thread;
+static mcsos_thread_t    g_thread_a;
+static mcsos_thread_t    g_thread_b;
+static unsigned char g_stack_a[8192] __attribute__((aligned(16)));
+static unsigned char g_stack_b[8192] __attribute__((aligned(16)));
+
+static void demo_thread_a(void *arg) {
+    (void)arg;
+    for (;;) {
+        serial_write_string("[M9] thread A tick\n");
+        mcsos_sched_yield(&g_sched);
+    }
+}
+
+static void demo_thread_b(void *arg) {
+    (void)arg;
+    for (;;) {
+        serial_write_string("[M9] thread B tick\n");
+        mcsos_sched_yield(&g_sched);
+    }
+}
 
 /* --------------------------------------------------------->
  * PMM M6
@@ -177,6 +201,17 @@ void kmain(void) {
     kernel_vmm_init();
     kernel_heap_init();
     serial_write_string("M8 ready\n");
+
+/* M9 — scheduler init */
+mcsos_scheduler_init(&g_sched, &g_boot_thread);
+mcsos_thread_prepare(&g_thread_a, "demo-a", demo_thread_a, 0,
+                     g_stack_a, sizeof(g_stack_a), g_sched.next_id++);
+mcsos_thread_prepare(&g_thread_b, "demo-b", demo_thread_b, 0,
+                     g_stack_b, sizeof(g_stack_b), g_sched.next_id++);
+mcsos_sched_enqueue(&g_sched, &g_thread_a);
+mcsos_sched_enqueue(&g_sched, &g_thread_b);
+serial_write_string("[M9] scheduler initialized\n");
+mcsos_sched_yield(&g_sched);
     for (;;) {
         cpu_hlt();
     }

@@ -112,6 +112,8 @@ OBJS := \
 	$(BUILD)/pmm.o \
 	$(BUILD)/vmm.o \
 	$(BUILD)/kmem.o \
+	$(BUILD)/mcsos_thread.o \
+	$(BUILD)/context_switch.o \
 	$(BUILD)/kernel.o
 
 # --------------------------------------------------------->
@@ -259,6 +261,12 @@ distclean: clean
 $(BUILD)/kmem.o: kernel/mm/kmem.c include/mcsos/kmem.h include/types.h   #>
 > $(CC) $(CFLAGS) -c kernel/mm/kmem.c -o $(BUILD)/kmem.o
 
+$(BUILD)/mcsos_thread.o: kernel/mcsos_thread.c include/mcsos_thread.h
+> $(CC) $(CFLAGS) -c kernel/mcsos_thread.c -o $(BUILD)/mcsos_thread.o
+
+$(BUILD)/context_switch.o: arch/x86_64/context_switch.S
+> $(CC) $(ASFLAGS) -c arch/x86_64/context_switch.S -o $(BUILD)/context_switch.o
+
 BUILD_DIR_M8 := build/m8
 
 .PHONY: m8-clean m8-kmem-host-test m8-kmem-freestanding m8-audit m8-all check-m8
@@ -285,3 +293,33 @@ m8-audit: m8-kmem-freestanding
 m8-all: m8-kmem-host-test m8-audit
 
 check-m8: m8-all
+
+# =========================================================>
+# M9 — Scheduler
+# =========================================================>
+BUILD_DIR_M9 := build/m9
+
+.PHONY: m9-freestanding m9-audit m9-all m9-clean
+
+m9-clean:
+> rm -rf $(BUILD_DIR_M9)
+
+$(BUILD_DIR_M9):
+> mkdir -p $(BUILD_DIR_M9)
+
+m9-host-test: | $(BUILD_DIR_M9)
+> $(HOSTCC) $(HOST_CFLAGS) tests/test_scheduler.c kernel/mcsos_thread.c -o $(BUILD_DIR_M9)/m9_host_test
+> $(BUILD_DIR_M9)/m9_host_test | tee $(BUILD_DIR_M9)/test_scheduler.log
+
+m9-freestanding: | $(BUILD_DIR_M9)
+> $(CC) $(CFLAGS) -c kernel/mcsos_thread.c -o $(BUILD_DIR_M9)/mcsos_thread.freestanding.o
+> $(CC) $(ASFLAGS) -c arch/x86_64/context_switch.S -o $(BUILD_DIR_M9)/context_switch.o
+> $(LD) -r $(BUILD_DIR_M9)/mcsos_thread.freestanding.o $(BUILD_DIR_M9)/context_switch.o -o $(BUILD_DIR_M9)/m9_scheduler_combined.o
+
+m9-audit: m9-freestanding
+> $(NM) -u $(BUILD_DIR_M9)/m9_scheduler_combined.o | tee $(BUILD_DIR_M9)/nm_undefined.log
+> $(READELF) -h $(BUILD_DIR_M9)/m9_scheduler_combined.o | tee $(BUILD_DIR_M9)/readelf_header.log
+> $(OBJDUMP) -d $(BUILD_DIR_M9)/m9_scheduler_combined.o | grep -E 'mcsos_context_switch|jmp|ret|hlt' | tee $(BUILD_DIR_M9)/objdump_key.log
+> sha256sum $(BUILD_DIR_M9)/m9_scheduler_combined.o | tee $(BUILD_DIR_M9)/sha256.log
+
+m9-all: m9-host-test m9-freestanding m9-audit
