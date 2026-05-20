@@ -8,6 +8,12 @@
 #include "vmm.h"
 #include "mcsos/kmem.h"
 #include "mcsos_thread.h"
+#include "mcsos/syscall.h"
+/* forward declaration untuk callback M10 */
+
+/* forward declaration untuk callback M10 */
+static mcsos_scheduler_t g_sched;
+
 /* ── M10 syscall callbacks ──────────────────────────────── */
 static uint64_t k_get_ticks(void) {
     return timer_ticks();
@@ -30,7 +36,7 @@ static int64_t k_write_serial(const char *buf, size_t len) {
 }
 static void m10_syscall_smoke(void) {
     int64_t r = mcsos_syscall_dispatch(MCSOS_SYS_PING, 0,0,0,0,0,0);
-    if (r != 0x2605020AL) { panic("M10 ping failed", (uint64_t)r); }
+    if (r != 0x2605020AL) { kernel_panic("M10 ping failed", (uint64_t)r); }
     serial_write_string("[M10] syscall ping ok\n");
     r = mcsos_syscall_dispatch(MCSOS_SYS_GET_TICKS, 0,0,0,0,0,0);
     serial_write_string("[M10] syscall get_ticks=");
@@ -39,7 +45,6 @@ static void m10_syscall_smoke(void) {
     serial_write_string("[M10] syscall smoke done\n");
 }
 /* ── end M10 ─────────────────────────────────────────────── */
-#include "mcsos/syscall.h"
 
 static mcsos_scheduler_t g_sched;
 static mcsos_thread_t    g_boot_thread;
@@ -251,6 +256,9 @@ serial_write_string("[M9] scheduler initialized\n");
         .write_serial  = k_write_serial,
     };
     mcsos_syscall_init(&ops);
+    extern void x86_64_syscall_int80_stub(void);
+    idt_install_gate(0x80u, x86_64_syscall_int80_stub, 0x8Eu);
+    serial_write_string("[M10] IDT vector 0x80 installed\n");
     mcsos_syscall_set_user_region((mcsos_user_region_t){
         .base  = 0x0000000000400000ULL,
         .limit = 0x0000800000000000ULL,

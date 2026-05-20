@@ -26,6 +26,7 @@ struct trap_frame {
 };
 
 void idt_init(void);
+void idt_install_gate(uint8_t vector, void (*handler)(void), uint8_t type_attr);
 void x86_64_trap_dispatch(struct trap_frame *frame);
 
 #endif

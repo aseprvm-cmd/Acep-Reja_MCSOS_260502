@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "mcsos/syscall.h"
 #include "io.h"
 #include "panic.h"
 #include "pic.h"
@@ -39,6 +40,11 @@ static void lidt(const struct idt_pointer *ptr) {
     __asm__ volatile ("lidt (%0)" :: "r"(ptr) : "memory");
 }
 
+void idt_install_gate(uint8_t vector, void (*handler)(void), uint8_t type_attr) {
+    const uint16_t cs = x86_64_read_cs();
+    idt_set_gate(vector, handler, cs, type_attr);
+}
+
 void idt_init(void) {
     const uint16_t cs = x86_64_read_cs();
     for (uint8_t i = 0; i < 48u; ++i) {
@@ -66,6 +72,23 @@ void x86_64_trap_dispatch(struct trap_frame *frame) {
             serial_write_string("\n");
         }
         pic_send_eoi(irq);
+        return;
+    }
+
+    if (frame->vector == 0x80u) {
+        extern void x86_64_syscall_int80_stub(void);
+        mcsos_syscall_frame_t frame80 = {
+            .nr  = frame->rax,
+            .arg0 = frame->rdi,
+            .arg1 = frame->rsi,
+            .arg2 = frame->rdx,
+            .arg3 = frame->r10,
+            .arg4 = frame->r8,
+            .arg5 = frame->r9,
+            .ret  = 0
+        };
+        mcsos_syscall_dispatch_frame(&frame80);
+        frame->rax = (uint64_t)frame80.ret;
         return;
     }
 
