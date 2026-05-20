@@ -114,6 +114,8 @@ OBJS := \
 	$(BUILD)/kmem.o \
 	$(BUILD)/mcsos_thread.o \
 	$(BUILD)/context_switch.o \
+	$(BUILD)/syscall.o \
+	$(BUILD)/syscall_entry.o \
 	$(BUILD)/kernel.o
 
 # --------------------------------------------------------->
@@ -266,6 +268,10 @@ $(BUILD)/mcsos_thread.o: kernel/mcsos_thread.c include/mcsos_thread.h
 
 $(BUILD)/context_switch.o: arch/x86_64/context_switch.S
 > $(CC) $(ASFLAGS) -c arch/x86_64/context_switch.S -o $(BUILD)/context_switch.o
+$(BUILD)/syscall.o: kernel/syscall/syscall.c
+> $(CC) $(CFLAGS) -c kernel/syscall/syscall.c -o $(BUILD)/syscall.o
+$(BUILD)/syscall_entry.o: kernel/syscall/syscall_entry.S
+> $(CC) $(ASFLAGS) -c kernel/syscall/syscall_entry.S -o $(BUILD)/syscall_entry.o
 
 BUILD_DIR_M8 := build/m8
 
@@ -323,3 +329,38 @@ m9-audit: m9-freestanding
 > sha256sum $(BUILD_DIR_M9)/m9_scheduler_combined.o | tee $(BUILD_DIR_M9)/sha256.log
 
 m9-all: m9-host-test m9-freestanding m9-audit
+
+# =========================================================
+# M10 — Syscall ABI & Dispatcher
+# =========================================================
+BUILD_DIR_M10 := build/m10
+
+.PHONY: m10-clean m10-host-test m10-freestanding m10-audit m10-all check-m10
+
+m10-clean:
+> rm -rf $(BUILD_DIR_M10)
+
+$(BUILD_DIR_M10):
+> mkdir -p $(BUILD_DIR_M10)
+
+m10-host-test: | $(BUILD_DIR_M10)
+> $(HOSTCC) $(HOST_CFLAGS) \
+>	tests/test_syscall_host.c kernel/syscall/syscall.c \
+>	-o $(BUILD_DIR_M10)/test_syscall_host
+> $(BUILD_DIR_M10)/test_syscall_host | tee $(BUILD_DIR_M10)/test_syscall.log
+
+m10-freestanding: | $(BUILD_DIR_M10)
+> $(CC) $(CFLAGS) -c kernel/syscall/syscall.c \
+>	-o $(BUILD_DIR_M10)/syscall.o
+> $(CC) $(ASFLAGS) -c kernel/syscall/syscall_entry.S \
+>	-o $(BUILD_DIR_M10)/syscall_entry.o
+> $(LD) -r $(BUILD_DIR_M10)/syscall.o $(BUILD_DIR_M10)/syscall_entry.o \
+>	-o $(BUILD_DIR_M10)/m10_syscall_combined.o
+
+m10-audit: m10-freestanding
+> $(NM) -u $(BUILD_DIR_M10)/m10_syscall_combined.o | tee $(BUILD_DIR_M10)/nm_undefined.log
+> $(READELF) -h $(BUILD_DIR_M10)/m10_syscall_combined.o | tee $(BUILD_DIR_M10)/readelf_header.log
+> $(OBJDUMP) -dr $(BUILD_DIR_M10)/m10_syscall_combined.o | tee $(BUILD_DIR_M10)/objdump.log
+> sha256sum $(BUILD_DIR_M10)/m10_syscall_combined.o | tee $(BUILD_DIR_M10)/sha256.log
+
+m10-all: m10-host-test m10-freestanding m10-audit

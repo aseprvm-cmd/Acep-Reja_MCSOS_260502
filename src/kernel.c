@@ -8,6 +8,38 @@
 #include "vmm.h"
 #include "mcsos/kmem.h"
 #include "mcsos_thread.h"
+/* ── M10 syscall callbacks ──────────────────────────────── */
+static uint64_t k_get_ticks(void) {
+    return timer_ticks();
+}
+static void k_yield_current(void) {
+    mcsos_sched_yield(&g_sched);
+}
+static void k_exit_current(int code) {
+    serial_write_string("[M10] exit_thread code=");
+    serial_write_hex64((uint64_t)(unsigned int)code);
+    serial_write_string("\n");
+    for (;;) { cpu_hlt(); }
+}
+static int64_t k_write_serial(const char *buf, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        char tmp[2] = { buf[i], '\0' };
+        serial_write_string(tmp);
+    }
+    return (int64_t)len;
+}
+static void m10_syscall_smoke(void) {
+    int64_t r = mcsos_syscall_dispatch(MCSOS_SYS_PING, 0,0,0,0,0,0);
+    if (r != 0x2605020AL) { panic("M10 ping failed", (uint64_t)r); }
+    serial_write_string("[M10] syscall ping ok\n");
+    r = mcsos_syscall_dispatch(MCSOS_SYS_GET_TICKS, 0,0,0,0,0,0);
+    serial_write_string("[M10] syscall get_ticks=");
+    serial_write_hex64((uint64_t)r);
+    serial_write_string("\n");
+    serial_write_string("[M10] syscall smoke done\n");
+}
+/* ── end M10 ─────────────────────────────────────────────── */
+#include "mcsos/syscall.h"
 
 static mcsos_scheduler_t g_sched;
 static mcsos_thread_t    g_boot_thread;
@@ -211,6 +243,20 @@ mcsos_thread_prepare(&g_thread_b, "demo-b", demo_thread_b, 0,
 mcsos_sched_enqueue(&g_sched, &g_thread_a);
 mcsos_sched_enqueue(&g_sched, &g_thread_b);
 serial_write_string("[M9] scheduler initialized\n");
+    /* M10 — syscall init */
+    mcsos_syscall_ops_t ops = {
+        .get_ticks     = k_get_ticks,
+        .yield_current = k_yield_current,
+        .exit_current  = k_exit_current,
+        .write_serial  = k_write_serial,
+    };
+    mcsos_syscall_init(&ops);
+    mcsos_syscall_set_user_region((mcsos_user_region_t){
+        .base  = 0x0000000000400000ULL,
+        .limit = 0x0000800000000000ULL,
+    });
+    serial_write_string("[M10] syscall init\n");
+    m10_syscall_smoke();
 mcsos_sched_yield(&g_sched);
     for (;;) {
         cpu_hlt();
