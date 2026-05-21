@@ -265,7 +265,7 @@ serial_write_string("[M9] scheduler initialized\n");
     });
     serial_write_string("[M10] syscall init\n");
     m10_syscall_smoke();
-mcsos_sched_yield(&g_sched);
+    mcsos_sched_yield(&g_sched);
     for (;;) {
         cpu_hlt();
     }
