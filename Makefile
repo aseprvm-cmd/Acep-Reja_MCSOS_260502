@@ -400,3 +400,10 @@ m11-host-test:
 >./build/m11/m11_host_test
 
 .PHONY: m11-host-test
+
+m11-freestanding:
+>@mkdir -p build/m11
+>clang --target=x86_64-unknown-none-elf -std=c17 -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-pie -fno-lto -m64 -march=x86-64 -mabi=sysv -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel -O2 -Wall -Wextra -Werror -Iinclude/mcsos/user -Iinclude -c kernel/user/m11_elf_loader.c -o build/m11/m11_elf_loader.freestanding.o
+>@echo "[M11] freestanding compile OK"
+
+.PHONY: m11-freestanding
