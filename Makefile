@@ -393,3 +393,10 @@ m7-test:
 
 m8-test: m8-all
 >@echo "[M8] heap test selesai via m8-all"
+
+m11-host-test:
+>@mkdir -p build/m11
+>$(CC) -std=c17 -Wall -Wextra -Werror -DMCSOS_HOST_TEST -Iinclude/mcsos/user -Iinclude tests/m11/m11_host_test.c kernel/user/m11_elf_loader.c -o build/m11/m11_host_test
+>./build/m11/m11_host_test
+
+.PHONY: m11-host-test
