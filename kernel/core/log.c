@@ -2,8 +2,8 @@
 #include <mcsos/kernel/log.h>
 
 void serial_init(void);
-void serial_putc(char c);
-void serial_write(const char *s);
+void serial_write_char(char c);
+void serial_write_string(const char *s);
 
 static int g_log_ready = 0;
 
@@ -17,7 +17,7 @@ void log_putc(char c) {
         serial_init();
         g_log_ready = 1;
     }
-    serial_putc(c);
+    serial_write_char(c);
 }
 
 void log_write(const char *s) {
@@ -25,7 +25,7 @@ void log_write(const char *s) {
         serial_init();
         g_log_ready = 1;
     }
-    serial_write(s);
+    serial_write_string(s);
 }
 
 void log_writeln(const char *s) {

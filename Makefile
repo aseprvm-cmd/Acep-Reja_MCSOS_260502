@@ -116,7 +116,10 @@ OBJS := \
 	$(BUILD)/context_switch.o \
 	$(BUILD)/syscall.o \
 	$(BUILD)/syscall_entry.o \
-	$(BUILD)/kernel.o
+	$(BUILD)/kernel.o \
+	$(BUILD)/log.o \
+	$(BUILD)/m11_elf_loader.o \
+	$(BUILD)/m11_kernel_integration.o
 
 # --------------------------------------------------------->
 # Phony
@@ -270,6 +273,15 @@ $(BUILD)/context_switch.o: arch/x86_64/context_switch.S
 > $(CC) $(ASFLAGS) -c arch/x86_64/context_switch.S -o $(BUILD)/context_switch.o
 $(BUILD)/syscall.o: kernel/syscall/syscall.c
 > $(CC) $(CFLAGS) -c kernel/syscall/syscall.c -o $(BUILD)/syscall.o
+
+$(BUILD)/m11_elf_loader.o: kernel/user/m11_elf_loader.c include/mcsos/user/m11_elf_loader.h
+>$(CC) $(CFLAGS) -Iinclude/mcsos/user -c kernel/user/m11_elf_loader.c -o $(BUILD)/m11_elf_loader.o
+
+$(BUILD)/log.o: kernel/core/log.c kernel/include/mcsos/kernel/log.h
+>$(CC) $(CFLAGS) -Ikernel/include -c kernel/core/log.c -o $(BUILD)/log.o
+
+$(BUILD)/m11_kernel_integration.o: kernel/user/m11_kernel_integration.c include/mcsos/user/m11_elf_loader.h include/mcsos/user/m11_integration.h
+>$(CC) $(CFLAGS) -Iinclude/mcsos/user -Ikernel/include -c kernel/user/m11_kernel_integration.c -o $(BUILD)/m11_kernel_integration.o
 $(BUILD)/syscall_entry.o: kernel/syscall/syscall_entry.S
 > $(CC) $(ASFLAGS) -c kernel/syscall/syscall_entry.S -o $(BUILD)/syscall_entry.o
 

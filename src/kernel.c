@@ -248,6 +248,9 @@ mcsos_thread_prepare(&g_thread_b, "demo-b", demo_thread_b, 0,
 mcsos_sched_enqueue(&g_sched, &g_thread_a);
 mcsos_sched_enqueue(&g_sched, &g_thread_b);
 serial_write_string("[M9] scheduler initialized\n");
+    /* M11 — ELF loader smoke test */
+    void m11_integration_smoke_test(void);
+    m11_integration_smoke_test();
     /* M10 — syscall init */
     mcsos_syscall_ops_t ops = {
         .get_ticks     = k_get_ticks,
