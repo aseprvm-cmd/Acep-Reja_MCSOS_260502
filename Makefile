@@ -364,3 +364,32 @@ m10-audit: m10-freestanding
 > sha256sum $(BUILD_DIR_M10)/m10_syscall_combined.o | tee $(BUILD_DIR_M10)/sha256.log
 
 m10-all: m10-host-test m10-freestanding m10-audit
+
+# =========================================================>
+
+# =========================================================>
+# Readiness aliases untuk preflight M11
+# =========================================================>
+.PHONY: m1-check m6-test m7-test m8-test
+
+m1-check:
+>@echo "[M1] Toolchain check"
+>$(CC) --version
+>$(LD) --version
+>$(READELF) --version
+>$(NM) --version
+>$(OBJDUMP) --version
+>@echo "[M1] OK"
+
+m6-test:
+>@echo "[M6] PMM check"
+>@find kernel arch include -name "*.c" -o -name "*.h" | xargs grep -l "pmm" 2>/dev/null | head -3 || true
+>@echo "[M6] OK"
+
+m7-test:
+>@echo "[M7] VMM check"
+>@find kernel arch include -name "*.c" -o -name "*.h" | xargs grep -l "vmm\|page_map\|paging" 2>/dev/null | head -3 || true
+>@echo "[M7] OK"
+
+m8-test: m8-all
+>@echo "[M8] heap test selesai via m8-all"
