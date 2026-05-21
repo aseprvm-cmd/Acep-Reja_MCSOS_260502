@@ -11,3 +11,6 @@ void log_hex64(uint64_t value);
 void log_key_value_hex64(const char *key, uint64_t value);
 
 #endif
+
+/* M11 integration smoke test — cetak process image plan ke serial log */
+void m11_integration_smoke_test(void);

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <mcsos/arch/cpu.h>
+#include <mcsos/user/m11_integration.h>
 #include <mcsos/arch/idt.h>
 #include <mcsos/kernel/log.h>
 #include <mcsos/kernel/panic.h>
@@ -40,6 +41,7 @@ void kmain(void) {
 #else
     log_writeln("[M4] IDT and exception dispatch path installed");
     log_writeln("[M4] ready for QEMU smoke test and GDB audit");
+    m11_integration_smoke_test();
     cpu_halt_forever();
 #endif
 }
