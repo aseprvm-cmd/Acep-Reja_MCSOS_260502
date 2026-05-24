@@ -22,104 +22,104 @@ MAP    := $(BUILD)/mcsos-m5.map
 # Flags
 # --------------------------------------------------------->
 CFLAGS := \
-	--target=x86_64-unknown-none-elf \
-	-std=c17 \
-	-ffreestanding \
-	-fno-builtin \
-	-fno-stack-protector \
-	-fno-pic \
-	-fno-pie \
-	-fno-lto \
-	-m64 \
-	-march=x86-64 \
-	-mabi=sysv \
-	-mno-red-zone \
-	-mno-mmx \
-	-mno-sse \
-	-mno-sse2 \
-	-mcmodel=kernel \
-	-O2 \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-Iinclude
+>--target=x86_64-unknown-none-elf \
+>-std=c17 \
+>-ffreestanding \
+>-fno-builtin \
+>-fno-stack-protector \
+>-fno-pic \
+>-fno-pie \
+>-fno-lto \
+>-m64 \
+>-march=x86-64 \
+>-mabi=sysv \
+>-mno-red-zone \
+>-mno-mmx \
+>-mno-sse \
+>-mno-sse2 \
+>-mcmodel=kernel \
+>-O2 \
+>-Wall \
+>-Wextra \
+>-Werror \
+>-Iinclude
 
 ASFLAGS := \
-	--target=x86_64-unknown-none-elf \
-	-ffreestanding \
-	-fno-pic \
-	-fno-pie \
-	-m64 \
-	-mno-red-zone \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-Iinclude
+>--target=x86_64-unknown-none-elf \
+>-ffreestanding \
+>-fno-pic \
+>-fno-pie \
+>-m64 \
+>-mno-red-zone \
+>-Wall \
+>-Wextra \
+>-Werror \
+>-Iinclude
 
 LDFLAGS := \
-	-nostdlib \
-	-static \
-	-z max-page-size=0x1000 \
-	-T linker.ld
+>-nostdlib \
+>-static \
+>-z max-page-size=0x1000 \
+>-T linker.ld
 
 # --------------------------------------------------------->
 # M6 — PMM flags
 # --------------------------------------------------------->
 M6_CFLAGS := \
-	-std=c17 \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-ffreestanding \
-	-fno-builtin \
-	-fno-stack-protector \
-	-mno-red-zone \
-	-Iinclude
+>-std=c17 \
+>-Wall \
+>-Wextra \
+>-Werror \
+>-ffreestanding \
+>-fno-builtin \
+>-fno-stack-protector \
+>-mno-red-zone \
+>-Iinclude
 
 # --------------------------------------------------------->
 # M7 — VMM flags
 # --------------------------------------------------------->
 M7_CFLAGS := \
-	-std=c17 \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-ffreestanding \
-	-fno-builtin \
-	-fno-stack-protector \
-	-mno-red-zone \
-	-Iinclude
+>-std=c17 \
+>-Wall \
+>-Wextra \
+>-Werror \
+>-ffreestanding \
+>-fno-builtin \
+>-fno-stack-protector \
+>-mno-red-zone \
+>-Iinclude
 
 HOST_CFLAGS := \
-	-std=c17 \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-DMCSOS_HOST_TEST \
-	-Iinclude
+>-std=c17 \
+>-Wall \
+>-Wextra \
+>-Werror \
+>-DMCSOS_HOST_TEST \
+>-Iinclude
 
 # --------------------------------------------------------->
 # Source & Object
 # --------------------------------------------------------->
 OBJS := \
-	$(BUILD)/boot.o \
-	$(BUILD)/interrupts.o \
-	$(BUILD)/serial.o \
-	$(BUILD)/panic.o \
-	$(BUILD)/pic.o \
-	$(BUILD)/pit.o \
-	$(BUILD)/idt.o \
-	$(BUILD)/pmm.o \
-	$(BUILD)/vmm.o \
-	$(BUILD)/kmem.o \
-	$(BUILD)/mcsos_thread.o \
-	$(BUILD)/context_switch.o \
-	$(BUILD)/syscall.o \
-	$(BUILD)/syscall_entry.o \
-	$(BUILD)/kernel.o \
-	$(BUILD)/log.o \
-	$(BUILD)/m11_elf_loader.o \
-	$(BUILD)/m11_kernel_integration.o
+>$(BUILD)/boot.o \
+>$(BUILD)/interrupts.o \
+>$(BUILD)/serial.o \
+>$(BUILD)/panic.o \
+>$(BUILD)/pic.o \
+>$(BUILD)/pit.o \
+>$(BUILD)/idt.o \
+>$(BUILD)/pmm.o \
+>$(BUILD)/vmm.o \
+>$(BUILD)/kmem.o \
+>$(BUILD)/mcsos_thread.o \
+>$(BUILD)/context_switch.o \
+>$(BUILD)/syscall.o \
+>$(BUILD)/syscall_entry.o \
+>$(BUILD)/kernel.o \
+>$(BUILD)/log.o \
+>$(BUILD)/m11_elf_loader.o \
+>$(BUILD)/m11_kernel_integration.o
 
 # --------------------------------------------------------->
 # Phony
@@ -419,3 +419,28 @@ m11-freestanding:
 >@echo "[M11] freestanding compile OK"
 
 .PHONY: m11-freestanding
+
+m11-audit:
+>@mkdir -p build/m11
+>nm -u build/m11/m11_elf_loader.freestanding.o > build/m11/m11_nm_undefined.txt
+>readelf -h build/m11/m11_elf_loader.freestanding.o > build/m11/m11_readelf_header.txt
+>/usr/bin/llvm-objdump -dr build/m11/m11_elf_loader.freestanding.o > build/m11/m11_objdump.txt
+>sha256sum build/m11/m11_elf_loader.freestanding.o \
+>          kernel/user/m11_elf_loader.c \
+>          include/mcsos/user/m11_elf_loader.h \
+>          tests/m11/m11_host_test.c > build/m11/m11_sha256.txt
+>@echo "[M11] audit OK"
+
+m11-qemu-smoke:
+>@mkdir -p build/m11
+>cp $(KERNEL) build/kernel.elf
+>bash tools/scripts/make_iso.sh
+>qemu-system-x86_64 -M q35 -m 512M \
+>  -cdrom build/mcsos.iso \
+>  -serial stdio \
+>  -no-reboot -no-shutdown 2>&1 | tee build/m11/m11_qemu_serial.log || true
+
+m11-all: m11-host-test m11-freestanding m11-audit m11-qemu-smoke
+>@echo "[M11] all targets done"
+
+.PHONY: m11-audit m11-qemu-smoke m11-all
