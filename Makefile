@@ -102,24 +102,24 @@ HOST_CFLAGS := \
 # Source & Object
 # --------------------------------------------------------->
 OBJS := \
->$(BUILD)/boot.o \
->$(BUILD)/interrupts.o \
->$(BUILD)/serial.o \
->$(BUILD)/panic.o \
->$(BUILD)/pic.o \
->$(BUILD)/pit.o \
->$(BUILD)/idt.o \
->$(BUILD)/pmm.o \
->$(BUILD)/vmm.o \
->$(BUILD)/kmem.o \
->$(BUILD)/mcsos_thread.o \
->$(BUILD)/context_switch.o \
->$(BUILD)/syscall.o \
->$(BUILD)/syscall_entry.o \
->$(BUILD)/kernel.o \
->$(BUILD)/log.o \
->$(BUILD)/m11_elf_loader.o \
->$(BUILD)/m11_kernel_integration.o
+$(BUILD)/boot.o \
+$(BUILD)/interrupts.o \
+$(BUILD)/serial.o \
+$(BUILD)/panic.o \
+$(BUILD)/pic.o \
+$(BUILD)/pit.o \
+$(BUILD)/idt.o \
+$(BUILD)/pmm.o \
+$(BUILD)/vmm.o \
+$(BUILD)/kmem.o \
+$(BUILD)/mcsos_thread.o \
+$(BUILD)/context_switch.o \
+$(BUILD)/syscall.o \
+$(BUILD)/syscall_entry.o \
+$(BUILD)/kernel.o \
+$(BUILD)/log.o \
+$(BUILD)/m11_elf_loader.o \
+$(BUILD)/m11_kernel_integration.o
 
 # --------------------------------------------------------->
 # Phony
