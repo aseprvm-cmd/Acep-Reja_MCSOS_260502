@@ -28,3 +28,24 @@ __pycache__/
 # Temporary files
 *.tmp
 *.swp
+--target=x86_64-unknown-none-elf
+-Iinclude
+-O2
+-Wall
+-Werror
+-Wextra
+-ffreestanding
+-fno-builtin
+-fno-lto
+-fno-pic
+-fno-pie
+-fno-stack-protector
+-m64
+-mabi=sysv
+-march=x86-64
+-mcmodel=kernel
+-mno-mmx
+-mno-red-zone
+-mno-sse
+-mno-sse2
+-std=c17

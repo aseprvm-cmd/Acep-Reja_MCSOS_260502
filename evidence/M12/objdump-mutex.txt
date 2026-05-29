@@ -1,0 +1,92 @@
+
+build/m12/mutex.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <mcs_mutex_init>:
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 85 ff             	test   %rdi,%rdi
+   7:	74 15                	je     1e <mcs_mutex_init+0x1e>
+   9:	c7 07 00 00 00 00    	movl   $0x0,(%rdi)
+   f:	48 c7 47 08 00 00 00 	movq   $0x0,0x8(%rdi)
+  16:	00 
+  17:	89 77 10             	mov    %esi,0x10(%rdi)
+  1a:	48 89 57 18          	mov    %rdx,0x18(%rdi)
+  1e:	5d                   	pop    %rbp
+  1f:	c3                   	ret
+
+0000000000000020 <mcs_mutex_try_lock>:
+  20:	55                   	push   %rbp
+  21:	48 89 e5             	mov    %rsp,%rbp
+  24:	b8 ea ff ff ff       	mov    $0xffffffea,%eax
+  29:	48 85 ff             	test   %rdi,%rdi
+  2c:	74 18                	je     46 <mcs_mutex_try_lock+0x26>
+  2e:	48 85 f6             	test   %rsi,%rsi
+  31:	74 13                	je     46 <mcs_mutex_try_lock+0x26>
+  33:	b9 01 00 00 00       	mov    $0x1,%ecx
+  38:	31 c0                	xor    %eax,%eax
+  3a:	f0 0f b1 0f          	lock cmpxchg %ecx,(%rdi)
+  3e:	75 08                	jne    48 <mcs_mutex_try_lock+0x28>
+  40:	48 89 77 08          	mov    %rsi,0x8(%rdi)
+  44:	31 c0                	xor    %eax,%eax
+  46:	5d                   	pop    %rbp
+  47:	c3                   	ret
+  48:	48 8b 47 08          	mov    0x8(%rdi),%rax
+  4c:	48 39 f0             	cmp    %rsi,%rax
+  4f:	b9 dd ff ff ff       	mov    $0xffffffdd,%ecx
+  54:	b8 f0 ff ff ff       	mov    $0xfffffff0,%eax
+  59:	0f 44 c1             	cmove  %ecx,%eax
+  5c:	5d                   	pop    %rbp
+  5d:	c3                   	ret
+  5e:	66 90                	xchg   %ax,%ax
+
+0000000000000060 <mcs_mutex_unlock>:
+  60:	55                   	push   %rbp
+  61:	48 89 e5             	mov    %rsp,%rbp
+  64:	b8 ea ff ff ff       	mov    $0xffffffea,%eax
+  69:	48 85 ff             	test   %rdi,%rdi
+  6c:	74 23                	je     91 <mcs_mutex_unlock+0x31>
+  6e:	48 85 f6             	test   %rsi,%rsi
+  71:	74 1e                	je     91 <mcs_mutex_unlock+0x31>
+  73:	48 8b 4f 08          	mov    0x8(%rdi),%rcx
+  77:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+  7c:	48 39 f1             	cmp    %rsi,%rcx
+  7f:	75 10                	jne    91 <mcs_mutex_unlock+0x31>
+  81:	48 c7 47 08 00 00 00 	movq   $0x0,0x8(%rdi)
+  88:	00 
+  89:	c7 07 00 00 00 00    	movl   $0x0,(%rdi)
+  8f:	31 c0                	xor    %eax,%eax
+  91:	5d                   	pop    %rbp
+  92:	c3                   	ret
+  93:	66 66 66 66 2e 0f 1f 	data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+  9a:	84 00 00 00 00 00 
+
+00000000000000a0 <mcs_mutex_is_locked>:
+  a0:	55                   	push   %rbp
+  a1:	48 89 e5             	mov    %rsp,%rbp
+  a4:	48 85 ff             	test   %rdi,%rdi
+  a7:	74 09                	je     b2 <mcs_mutex_is_locked+0x12>
+  a9:	8b 07                	mov    (%rdi),%eax
+  ab:	85 c0                	test   %eax,%eax
+  ad:	0f 95 c0             	setne  %al
+  b0:	5d                   	pop    %rbp
+  b1:	c3                   	ret
+  b2:	31 c0                	xor    %eax,%eax
+  b4:	5d                   	pop    %rbp
+  b5:	c3                   	ret
+  b6:	66 2e 0f 1f 84 00 00 	cs nopw 0x0(%rax,%rax,1)
+  bd:	00 00 00 
+
+00000000000000c0 <mcs_mutex_owner>:
+  c0:	55                   	push   %rbp
+  c1:	48 89 e5             	mov    %rsp,%rbp
+  c4:	48 85 ff             	test   %rdi,%rdi
+  c7:	74 06                	je     cf <mcs_mutex_owner+0xf>
+  c9:	48 8b 47 08          	mov    0x8(%rdi),%rax
+  cd:	5d                   	pop    %rbp
+  ce:	c3                   	ret
+  cf:	31 c0                	xor    %eax,%eax
+  d1:	5d                   	pop    %rbp
+  d2:	c3                   	ret

@@ -1,0 +1,175 @@
+
+build/m12/lockdep.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <mcs_lockdep_init>:
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 85 ff             	test   %rdi,%rdi
+   7:	0f 84 e2 00 00 00    	je     ef <mcs_lockdep_init+0xef>
+   d:	48 c7 07 00 00 00 00 	movq   $0x0,(%rdi)
+  14:	48 c7 47 40 00 00 00 	movq   $0x0,0x40(%rdi)
+  1b:	00 
+  1c:	48 c7 47 48 00 00 00 	movq   $0x0,0x48(%rdi)
+  23:	00 
+  24:	48 c7 47 08 00 00 00 	movq   $0x0,0x8(%rdi)
+  2b:	00 
+  2c:	48 c7 47 50 00 00 00 	movq   $0x0,0x50(%rdi)
+  33:	00 
+  34:	48 c7 47 58 00 00 00 	movq   $0x0,0x58(%rdi)
+  3b:	00 
+  3c:	48 c7 47 10 00 00 00 	movq   $0x0,0x10(%rdi)
+  43:	00 
+  44:	48 c7 47 60 00 00 00 	movq   $0x0,0x60(%rdi)
+  4b:	00 
+  4c:	48 c7 47 68 00 00 00 	movq   $0x0,0x68(%rdi)
+  53:	00 
+  54:	48 c7 47 18 00 00 00 	movq   $0x0,0x18(%rdi)
+  5b:	00 
+  5c:	48 c7 47 70 00 00 00 	movq   $0x0,0x70(%rdi)
+  63:	00 
+  64:	48 c7 47 78 00 00 00 	movq   $0x0,0x78(%rdi)
+  6b:	00 
+  6c:	48 c7 47 20 00 00 00 	movq   $0x0,0x20(%rdi)
+  73:	00 
+  74:	48 c7 87 80 00 00 00 	movq   $0x0,0x80(%rdi)
+  7b:	00 00 00 00 
+  7f:	48 c7 87 88 00 00 00 	movq   $0x0,0x88(%rdi)
+  86:	00 00 00 00 
+  8a:	48 c7 47 28 00 00 00 	movq   $0x0,0x28(%rdi)
+  91:	00 
+  92:	48 c7 87 90 00 00 00 	movq   $0x0,0x90(%rdi)
+  99:	00 00 00 00 
+  9d:	48 c7 87 98 00 00 00 	movq   $0x0,0x98(%rdi)
+  a4:	00 00 00 00 
+  a8:	48 c7 47 30 00 00 00 	movq   $0x0,0x30(%rdi)
+  af:	00 
+  b0:	48 c7 87 a0 00 00 00 	movq   $0x0,0xa0(%rdi)
+  b7:	00 00 00 00 
+  bb:	48 c7 87 a8 00 00 00 	movq   $0x0,0xa8(%rdi)
+  c2:	00 00 00 00 
+  c6:	48 c7 47 38 00 00 00 	movq   $0x0,0x38(%rdi)
+  cd:	00 
+  ce:	48 c7 87 b0 00 00 00 	movq   $0x0,0xb0(%rdi)
+  d5:	00 00 00 00 
+  d9:	48 c7 87 b8 00 00 00 	movq   $0x0,0xb8(%rdi)
+  e0:	00 00 00 00 
+  e4:	48 c7 87 c0 00 00 00 	movq   $0x0,0xc0(%rdi)
+  eb:	00 00 00 00 
+  ef:	5d                   	pop    %rbp
+  f0:	c3                   	ret
+  f1:	66 66 66 66 66 66 2e 	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+  f8:	0f 1f 84 00 00 00 00 
+  ff:	00 
+
+0000000000000100 <mcs_lockdep_is_held>:
+ 100:	55                   	push   %rbp
+ 101:	48 89 e5             	mov    %rsp,%rbp
+ 104:	31 c0                	xor    %eax,%eax
+ 106:	48 85 ff             	test   %rdi,%rdi
+ 109:	74 3c                	je     147 <mcs_lockdep_is_held+0x47>
+ 10b:	85 f6                	test   %esi,%esi
+ 10d:	74 38                	je     147 <mcs_lockdep_is_held+0x47>
+ 10f:	8b 87 c0 00 00 00    	mov    0xc0(%rdi),%eax
+ 115:	85 c0                	test   %eax,%eax
+ 117:	74 30                	je     149 <mcs_lockdep_is_held+0x49>
+ 119:	83 f8 10             	cmp    $0x10,%eax
+ 11c:	b9 10 00 00 00       	mov    $0x10,%ecx
+ 121:	0f 42 c8             	cmovb  %eax,%ecx
+ 124:	b0 01                	mov    $0x1,%al
+ 126:	39 37                	cmp    %esi,(%rdi)
+ 128:	74 1d                	je     147 <mcs_lockdep_is_held+0x47>
+ 12a:	ba 01 00 00 00       	mov    $0x1,%edx
+ 12f:	90                   	nop
+ 130:	48 89 d0             	mov    %rdx,%rax
+ 133:	48 39 d1             	cmp    %rdx,%rcx
+ 136:	74 09                	je     141 <mcs_lockdep_is_held+0x41>
+ 138:	48 8d 50 01          	lea    0x1(%rax),%rdx
+ 13c:	39 34 87             	cmp    %esi,(%rdi,%rax,4)
+ 13f:	75 ef                	jne    130 <mcs_lockdep_is_held+0x30>
+ 141:	48 39 c8             	cmp    %rcx,%rax
+ 144:	0f 92 c0             	setb   %al
+ 147:	5d                   	pop    %rbp
+ 148:	c3                   	ret
+ 149:	31 c0                	xor    %eax,%eax
+ 14b:	5d                   	pop    %rbp
+ 14c:	c3                   	ret
+ 14d:	0f 1f 00             	nopl   (%rax)
+
+0000000000000150 <mcs_lockdep_before_acquire>:
+ 150:	55                   	push   %rbp
+ 151:	48 89 e5             	mov    %rsp,%rbp
+ 154:	b8 ea ff ff ff       	mov    $0xffffffea,%eax
+ 159:	48 85 ff             	test   %rdi,%rdi
+ 15c:	74 71                	je     1cf <mcs_lockdep_before_acquire+0x7f>
+ 15e:	85 f6                	test   %esi,%esi
+ 160:	74 6d                	je     1cf <mcs_lockdep_before_acquire+0x7f>
+ 162:	8b 87 c0 00 00 00    	mov    0xc0(%rdi),%eax
+ 168:	48 83 f8 0f          	cmp    $0xf,%rax
+ 16c:	76 0d                	jbe    17b <mcs_lockdep_before_acquire+0x2b>
+ 16e:	ff 87 c4 00 00 00    	incl   0xc4(%rdi)
+ 174:	b8 b5 ff ff ff       	mov    $0xffffffb5,%eax
+ 179:	5d                   	pop    %rbp
+ 17a:	c3                   	ret
+ 17b:	48 85 c0             	test   %rax,%rax
+ 17e:	74 37                	je     1b7 <mcs_lockdep_before_acquire+0x67>
+ 180:	31 c9                	xor    %ecx,%ecx
+ 182:	66 66 66 66 66 2e 0f 	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+ 189:	1f 84 00 00 00 00 00 
+ 190:	39 34 8f             	cmp    %esi,(%rdi,%rcx,4)
+ 193:	74 15                	je     1aa <mcs_lockdep_before_acquire+0x5a>
+ 195:	48 ff c1             	inc    %rcx
+ 198:	48 39 c8             	cmp    %rcx,%rax
+ 19b:	75 f3                	jne    190 <mcs_lockdep_before_acquire+0x40>
+ 19d:	48 85 c0             	test   %rax,%rax
+ 1a0:	74 15                	je     1b7 <mcs_lockdep_before_acquire+0x67>
+ 1a2:	8d 48 ff             	lea    -0x1(%rax),%ecx
+ 1a5:	39 34 8f             	cmp    %esi,(%rdi,%rcx,4)
+ 1a8:	76 0d                	jbe    1b7 <mcs_lockdep_before_acquire+0x67>
+ 1aa:	ff 87 c4 00 00 00    	incl   0xc4(%rdi)
+ 1b0:	b8 dd ff ff ff       	mov    $0xffffffdd,%eax
+ 1b5:	5d                   	pop    %rbp
+ 1b6:	c3                   	ret
+ 1b7:	89 34 87             	mov    %esi,(%rdi,%rax,4)
+ 1ba:	8b 87 c0 00 00 00    	mov    0xc0(%rdi),%eax
+ 1c0:	48 89 54 c7 40       	mov    %rdx,0x40(%rdi,%rax,8)
+ 1c5:	ff c0                	inc    %eax
+ 1c7:	89 87 c0 00 00 00    	mov    %eax,0xc0(%rdi)
+ 1cd:	31 c0                	xor    %eax,%eax
+ 1cf:	5d                   	pop    %rbp
+ 1d0:	c3                   	ret
+ 1d1:	66 66 66 66 66 66 2e 	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+ 1d8:	0f 1f 84 00 00 00 00 
+ 1df:	00 
+
+00000000000001e0 <mcs_lockdep_after_release>:
+ 1e0:	55                   	push   %rbp
+ 1e1:	48 89 e5             	mov    %rsp,%rbp
+ 1e4:	b8 ea ff ff ff       	mov    $0xffffffea,%eax
+ 1e9:	48 85 ff             	test   %rdi,%rdi
+ 1ec:	74 2d                	je     21b <mcs_lockdep_after_release+0x3b>
+ 1ee:	85 f6                	test   %esi,%esi
+ 1f0:	74 29                	je     21b <mcs_lockdep_after_release+0x3b>
+ 1f2:	8b 87 c0 00 00 00    	mov    0xc0(%rdi),%eax
+ 1f8:	85 c0                	test   %eax,%eax
+ 1fa:	74 21                	je     21d <mcs_lockdep_after_release+0x3d>
+ 1fc:	ff c8                	dec    %eax
+ 1fe:	39 34 87             	cmp    %esi,(%rdi,%rax,4)
+ 201:	75 27                	jne    22a <mcs_lockdep_after_release+0x4a>
+ 203:	c7 04 87 00 00 00 00 	movl   $0x0,(%rdi,%rax,4)
+ 20a:	48 c7 44 c7 40 00 00 	movq   $0x0,0x40(%rdi,%rax,8)
+ 211:	00 00 
+ 213:	ff 8f c0 00 00 00    	decl   0xc0(%rdi)
+ 219:	31 c0                	xor    %eax,%eax
+ 21b:	5d                   	pop    %rbp
+ 21c:	c3                   	ret
+ 21d:	ff 87 c4 00 00 00    	incl   0xc4(%rdi)
+ 223:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+ 228:	5d                   	pop    %rbp
+ 229:	c3                   	ret
+ 22a:	ff 87 c4 00 00 00    	incl   0xc4(%rdi)
+ 230:	b8 dd ff ff ff       	mov    $0xffffffdd,%eax
+ 235:	5d                   	pop    %rbp
+ 236:	c3                   	ret
