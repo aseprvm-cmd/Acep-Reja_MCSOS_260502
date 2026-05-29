@@ -1,0 +1,96 @@
+# =============================================================
+# Makefile.m12 — M12 Synchronization: Spinlock, Mutex, Lockdep
+# MCSOS versi 260502
+# Penggunaan:
+#   make -f Makefile.m12 clean
+#   make -f Makefile.m12 all CC=clang | tee evidence/M12/m12-build.log
+# =============================================================
+
+CC      ?= clang
+HOSTCC  ?= cc
+NM      ?= nm
+READELF ?= readelf
+OBJDUMP ?= $(shell command -v llvm-objdump 2>/dev/null || echo objdump)
+
+BUILD := build/m12
+
+CFLAGS_COMMON := \
+	-std=c17 \
+	-Wall \
+	-Wextra \
+	-Werror \
+	-Iinclude
+
+KERNEL_CFLAGS := \
+	$(CFLAGS_COMMON) \
+	--target=x86_64-unknown-none-elf \
+	-ffreestanding \
+	-fno-builtin \
+	-fno-stack-protector \
+	-fno-pic \
+	-fno-pie \
+	-fno-lto \
+	-m64 \
+	-march=x86-64 \
+	-mabi=sysv \
+	-mno-red-zone \
+	-mno-mmx \
+	-mno-sse \
+	-mno-sse2 \
+	-mcmodel=kernel \
+	-O2
+
+HOST_CFLAGS := \
+	$(CFLAGS_COMMON) \
+	-DMCSOS_HOST_TEST \
+	-O2 \
+	-pthread
+
+SYNC_SRCS := \
+	kernel/sync/lockdep.c \
+	kernel/sync/spinlock.c \
+	kernel/sync/mutex.c
+
+.PHONY: all clean host-test freestanding audit
+
+all: host-test freestanding audit
+
+$(BUILD):
+	mkdir -p $(BUILD)
+
+host-test: | $(BUILD)
+	$(HOSTCC) $(HOST_CFLAGS) \
+		$(SYNC_SRCS) \
+		tests/m12_sync_host_test.c \
+		-o $(BUILD)/m12_sync_host_test
+	$(BUILD)/m12_sync_host_test | tee $(BUILD)/host-test.log
+
+freestanding: | $(BUILD)
+	$(CC) $(KERNEL_CFLAGS) -c kernel/sync/lockdep.c  -o $(BUILD)/lockdep.o
+	$(CC) $(KERNEL_CFLAGS) -c kernel/sync/spinlock.c -o $(BUILD)/spinlock.o
+	$(CC) $(KERNEL_CFLAGS) -c kernel/sync/mutex.c    -o $(BUILD)/mutex.o
+
+audit: freestanding
+	$(NM) -u \
+		$(BUILD)/lockdep.o \
+		$(BUILD)/spinlock.o \
+		$(BUILD)/mutex.o \
+		| tee $(BUILD)/nm-undefined.txt
+	$(READELF) -h $(BUILD)/lockdep.o  | tee $(BUILD)/readelf-lockdep.txt
+	$(READELF) -h $(BUILD)/spinlock.o | tee $(BUILD)/readelf-spinlock.txt
+	$(READELF) -h $(BUILD)/mutex.o    | tee $(BUILD)/readelf-mutex.txt
+	$(OBJDUMP) -d $(BUILD)/spinlock.o | tee $(BUILD)/objdump-spinlock.txt
+	$(OBJDUMP) -d $(BUILD)/lockdep.o  | tee $(BUILD)/objdump-lockdep.txt
+	$(OBJDUMP) -d $(BUILD)/mutex.o    | tee $(BUILD)/objdump-mutex.txt
+	sha256sum \
+		$(BUILD)/lockdep.o \
+		$(BUILD)/spinlock.o \
+		$(BUILD)/mutex.o \
+		$(BUILD)/m12_sync_host_test \
+		| tee $(BUILD)/sha256sums.txt
+	@echo "[M12] Checking no unresolved symbols..."
+	@! grep -q ' U ' $(BUILD)/nm-undefined.txt
+	@echo "[M12] audit: PASS"
+
+clean:
+	rm -rf $(BUILD)
