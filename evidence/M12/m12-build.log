@@ -1,0 +1,408 @@
+mkdir -p build/m12
+cc -std=c17 -Wall -Wextra -Werror -Iinclude -DMCSOS_HOST_TEST -O2 -pthread \
+	kernel/sync/lockdep.c kernel/sync/spinlock.c kernel/sync/mutex.c \
+	tests/m12_sync_host_test.c \
+	-o build/m12/m12_sync_host_test
+build/m12/m12_sync_host_test | tee build/m12/host-test.log
+[PASS] M12 synchronization host tests passed
+clang -std=c17 -Wall -Wextra -Werror -Iinclude --target=x86_64-unknown-none-elf -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-pie -fno-lto -m64 -march=x86-64 -mabi=sysv -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel -O2 -c kernel/sync/lockdep.c  -o build/m12/lockdep.o
+clang -std=c17 -Wall -Wextra -Werror -Iinclude --target=x86_64-unknown-none-elf -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-pie -fno-lto -m64 -march=x86-64 -mabi=sysv -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel -O2 -c kernel/sync/spinlock.c -o build/m12/spinlock.o
+clang -std=c17 -Wall -Wextra -Werror -Iinclude --target=x86_64-unknown-none-elf -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-pie -fno-lto -m64 -march=x86-64 -mabi=sysv -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel -O2 -c kernel/sync/mutex.c    -o build/m12/mutex.o
+nm -u \
+	build/m12/lockdep.o \
+	build/m12/spinlock.o \
+	build/m12/mutex.o \
+	| tee build/m12/nm-undefined.txt
+
+build/m12/lockdep.o:
+
+build/m12/spinlock.o:
+
+build/m12/mutex.o:
+readelf -h build/m12/lockdep.o  | tee build/m12/readelf-lockdep.txt
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              REL (Relocatable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          0 (bytes into file)
+  Start of section headers:          984 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           0 (bytes)
+  Number of program headers:         0
+  Size of section headers:           64 (bytes)
+  Number of section headers:         7
+  Section header string table index: 1
+readelf -h build/m12/spinlock.o | tee build/m12/readelf-spinlock.txt
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              REL (Relocatable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          0 (bytes into file)
+  Start of section headers:          616 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           0 (bytes)
+  Number of program headers:         0
+  Size of section headers:           64 (bytes)
+  Number of section headers:         7
+  Section header string table index: 1
+readelf -h build/m12/mutex.o    | tee build/m12/readelf-mutex.txt
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              REL (Relocatable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          0 (bytes into file)
+  Start of section headers:          648 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           0 (bytes)
+  Number of program headers:         0
+  Size of section headers:           64 (bytes)
+  Number of section headers:         7
+  Section header string table index: 1
+/usr/bin/llvm-objdump -d build/m12/spinlock.o | tee build/m12/objdump-spinlock.txt
+
+build/m12/spinlock.o:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000000000000 <mcs_spin_init>:
+       0: 55                           	pushq	%rbp
+       1: 48 89 e5                     	movq	%rsp, %rbp
+       4: 48 85 ff                     	testq	%rdi, %rdi
+       7: 74 0d                        	je	0x16 <mcs_spin_init+0x16>
+       9: c7 07 00 00 00 00            	movl	$0x0, (%rdi)
+       f: 89 77 04                     	movl	%esi, 0x4(%rdi)
+      12: 48 89 57 08                  	movq	%rdx, 0x8(%rdi)
+      16: 5d                           	popq	%rbp
+      17: c3                           	retq
+      18: 0f 1f 84 00 00 00 00 00      	nopl	(%rax,%rax)
+
+0000000000000020 <mcs_spin_try_lock>:
+      20: 55                           	pushq	%rbp
+      21: 48 89 e5                     	movq	%rsp, %rbp
+      24: 48 85 ff                     	testq	%rdi, %rdi
+      27: 74 0e                        	je	0x37 <mcs_spin_try_lock+0x17>
+      29: b8 01 00 00 00               	movl	$0x1, %eax
+      2e: 87 07                        	xchgl	%eax, (%rdi)
+      30: 85 c0                        	testl	%eax, %eax
+      32: 0f 94 c0                     	sete	%al
+      35: 5d                           	popq	%rbp
+      36: c3                           	retq
+      37: 31 c0                        	xorl	%eax, %eax
+      39: 5d                           	popq	%rbp
+      3a: c3                           	retq
+      3b: 0f 1f 44 00 00               	nopl	(%rax,%rax)
+
+0000000000000040 <mcs_spin_lock>:
+      40: 55                           	pushq	%rbp
+      41: 48 89 e5                     	movq	%rsp, %rbp
+      44: 66 66 66 2e 0f 1f 84 00 00 00 00 00  	nopw	%cs:(%rax,%rax)
+      50: 48 85 ff                     	testq	%rdi, %rdi
+      53: 74 1d                        	je	0x72 <mcs_spin_lock+0x32>
+      55: b8 01 00 00 00               	movl	$0x1, %eax
+      5a: 87 07                        	xchgl	%eax, (%rdi)
+      5c: 85 c0                        	testl	%eax, %eax
+      5e: 75 12                        	jne	0x72 <mcs_spin_lock+0x32>
+      60: eb 18                        	jmp	0x7a <mcs_spin_lock+0x3a>
+      62: 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00    	nopw	%cs:(%rax,%rax)
+      70: f3 90                        	pause
+      72: 8b 07                        	movl	(%rdi), %eax
+      74: 85 c0                        	testl	%eax, %eax
+      76: 75 f8                        	jne	0x70 <mcs_spin_lock+0x30>
+      78: eb d6                        	jmp	0x50 <mcs_spin_lock+0x10>
+      7a: 5d                           	popq	%rbp
+      7b: c3                           	retq
+      7c: 0f 1f 40 00                  	nopl	(%rax)
+
+0000000000000080 <mcs_spin_unlock>:
+      80: 55                           	pushq	%rbp
+      81: 48 89 e5                     	movq	%rsp, %rbp
+      84: 48 85 ff                     	testq	%rdi, %rdi
+      87: 74 06                        	je	0x8f <mcs_spin_unlock+0xf>
+      89: c7 07 00 00 00 00            	movl	$0x0, (%rdi)
+      8f: 5d                           	popq	%rbp
+      90: c3                           	retq
+      91: 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+
+00000000000000a0 <mcs_spin_is_locked>:
+      a0: 55                           	pushq	%rbp
+      a1: 48 89 e5                     	movq	%rsp, %rbp
+      a4: 48 85 ff                     	testq	%rdi, %rdi
+      a7: 74 09                        	je	0xb2 <mcs_spin_is_locked+0x12>
+      a9: 8b 07                        	movl	(%rdi), %eax
+      ab: 85 c0                        	testl	%eax, %eax
+      ad: 0f 95 c0                     	setne	%al
+      b0: 5d                           	popq	%rbp
+      b1: c3                           	retq
+      b2: 31 c0                        	xorl	%eax, %eax
+      b4: 5d                           	popq	%rbp
+      b5: c3                           	retq
+/usr/bin/llvm-objdump -d build/m12/lockdep.o  | tee build/m12/objdump-lockdep.txt
+
+build/m12/lockdep.o:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000000000000 <mcs_lockdep_init>:
+       0: 55                           	pushq	%rbp
+       1: 48 89 e5                     	movq	%rsp, %rbp
+       4: 48 85 ff                     	testq	%rdi, %rdi
+       7: 0f 84 e2 00 00 00            	je	0xef <mcs_lockdep_init+0xef>
+       d: 48 c7 07 00 00 00 00         	movq	$0x0, (%rdi)
+      14: 48 c7 47 40 00 00 00 00      	movq	$0x0, 0x40(%rdi)
+      1c: 48 c7 47 48 00 00 00 00      	movq	$0x0, 0x48(%rdi)
+      24: 48 c7 47 08 00 00 00 00      	movq	$0x0, 0x8(%rdi)
+      2c: 48 c7 47 50 00 00 00 00      	movq	$0x0, 0x50(%rdi)
+      34: 48 c7 47 58 00 00 00 00      	movq	$0x0, 0x58(%rdi)
+      3c: 48 c7 47 10 00 00 00 00      	movq	$0x0, 0x10(%rdi)
+      44: 48 c7 47 60 00 00 00 00      	movq	$0x0, 0x60(%rdi)
+      4c: 48 c7 47 68 00 00 00 00      	movq	$0x0, 0x68(%rdi)
+      54: 48 c7 47 18 00 00 00 00      	movq	$0x0, 0x18(%rdi)
+      5c: 48 c7 47 70 00 00 00 00      	movq	$0x0, 0x70(%rdi)
+      64: 48 c7 47 78 00 00 00 00      	movq	$0x0, 0x78(%rdi)
+      6c: 48 c7 47 20 00 00 00 00      	movq	$0x0, 0x20(%rdi)
+      74: 48 c7 87 80 00 00 00 00 00 00 00     	movq	$0x0, 0x80(%rdi)
+      7f: 48 c7 87 88 00 00 00 00 00 00 00     	movq	$0x0, 0x88(%rdi)
+      8a: 48 c7 47 28 00 00 00 00      	movq	$0x0, 0x28(%rdi)
+      92: 48 c7 87 90 00 00 00 00 00 00 00     	movq	$0x0, 0x90(%rdi)
+      9d: 48 c7 87 98 00 00 00 00 00 00 00     	movq	$0x0, 0x98(%rdi)
+      a8: 48 c7 47 30 00 00 00 00      	movq	$0x0, 0x30(%rdi)
+      b0: 48 c7 87 a0 00 00 00 00 00 00 00     	movq	$0x0, 0xa0(%rdi)
+      bb: 48 c7 87 a8 00 00 00 00 00 00 00     	movq	$0x0, 0xa8(%rdi)
+      c6: 48 c7 47 38 00 00 00 00      	movq	$0x0, 0x38(%rdi)
+      ce: 48 c7 87 b0 00 00 00 00 00 00 00     	movq	$0x0, 0xb0(%rdi)
+      d9: 48 c7 87 b8 00 00 00 00 00 00 00     	movq	$0x0, 0xb8(%rdi)
+      e4: 48 c7 87 c0 00 00 00 00 00 00 00     	movq	$0x0, 0xc0(%rdi)
+      ef: 5d                           	popq	%rbp
+      f0: c3                           	retq
+      f1: 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+
+0000000000000100 <mcs_lockdep_is_held>:
+     100: 55                           	pushq	%rbp
+     101: 48 89 e5                     	movq	%rsp, %rbp
+     104: 31 c0                        	xorl	%eax, %eax
+     106: 48 85 ff                     	testq	%rdi, %rdi
+     109: 74 3c                        	je	0x147 <mcs_lockdep_is_held+0x47>
+     10b: 85 f6                        	testl	%esi, %esi
+     10d: 74 38                        	je	0x147 <mcs_lockdep_is_held+0x47>
+     10f: 8b 87 c0 00 00 00            	movl	0xc0(%rdi), %eax
+     115: 85 c0                        	testl	%eax, %eax
+     117: 74 30                        	je	0x149 <mcs_lockdep_is_held+0x49>
+     119: 83 f8 10                     	cmpl	$0x10, %eax
+     11c: b9 10 00 00 00               	movl	$0x10, %ecx
+     121: 0f 42 c8                     	cmovbl	%eax, %ecx
+     124: b0 01                        	movb	$0x1, %al
+     126: 39 37                        	cmpl	%esi, (%rdi)
+     128: 74 1d                        	je	0x147 <mcs_lockdep_is_held+0x47>
+     12a: ba 01 00 00 00               	movl	$0x1, %edx
+     12f: 90                           	nop
+     130: 48 89 d0                     	movq	%rdx, %rax
+     133: 48 39 d1                     	cmpq	%rdx, %rcx
+     136: 74 09                        	je	0x141 <mcs_lockdep_is_held+0x41>
+     138: 48 8d 50 01                  	leaq	0x1(%rax), %rdx
+     13c: 39 34 87                     	cmpl	%esi, (%rdi,%rax,4)
+     13f: 75 ef                        	jne	0x130 <mcs_lockdep_is_held+0x30>
+     141: 48 39 c8                     	cmpq	%rcx, %rax
+     144: 0f 92 c0                     	setb	%al
+     147: 5d                           	popq	%rbp
+     148: c3                           	retq
+     149: 31 c0                        	xorl	%eax, %eax
+     14b: 5d                           	popq	%rbp
+     14c: c3                           	retq
+     14d: 0f 1f 00                     	nopl	(%rax)
+
+0000000000000150 <mcs_lockdep_before_acquire>:
+     150: 55                           	pushq	%rbp
+     151: 48 89 e5                     	movq	%rsp, %rbp
+     154: b8 ea ff ff ff               	movl	$0xffffffea, %eax       # imm = 0xFFFFFFEA
+     159: 48 85 ff                     	testq	%rdi, %rdi
+     15c: 74 71                        	je	0x1cf <mcs_lockdep_before_acquire+0x7f>
+     15e: 85 f6                        	testl	%esi, %esi
+     160: 74 6d                        	je	0x1cf <mcs_lockdep_before_acquire+0x7f>
+     162: 8b 87 c0 00 00 00            	movl	0xc0(%rdi), %eax
+     168: 48 83 f8 0f                  	cmpq	$0xf, %rax
+     16c: 76 0d                        	jbe	0x17b <mcs_lockdep_before_acquire+0x2b>
+     16e: ff 87 c4 00 00 00            	incl	0xc4(%rdi)
+     174: b8 b5 ff ff ff               	movl	$0xffffffb5, %eax       # imm = 0xFFFFFFB5
+     179: 5d                           	popq	%rbp
+     17a: c3                           	retq
+     17b: 48 85 c0                     	testq	%rax, %rax
+     17e: 74 37                        	je	0x1b7 <mcs_lockdep_before_acquire+0x67>
+     180: 31 c9                        	xorl	%ecx, %ecx
+     182: 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00    	nopw	%cs:(%rax,%rax)
+     190: 39 34 8f                     	cmpl	%esi, (%rdi,%rcx,4)
+     193: 74 15                        	je	0x1aa <mcs_lockdep_before_acquire+0x5a>
+     195: 48 ff c1                     	incq	%rcx
+     198: 48 39 c8                     	cmpq	%rcx, %rax
+     19b: 75 f3                        	jne	0x190 <mcs_lockdep_before_acquire+0x40>
+     19d: 48 85 c0                     	testq	%rax, %rax
+     1a0: 74 15                        	je	0x1b7 <mcs_lockdep_before_acquire+0x67>
+     1a2: 8d 48 ff                     	leal	-0x1(%rax), %ecx
+     1a5: 39 34 8f                     	cmpl	%esi, (%rdi,%rcx,4)
+     1a8: 76 0d                        	jbe	0x1b7 <mcs_lockdep_before_acquire+0x67>
+     1aa: ff 87 c4 00 00 00            	incl	0xc4(%rdi)
+     1b0: b8 dd ff ff ff               	movl	$0xffffffdd, %eax       # imm = 0xFFFFFFDD
+     1b5: 5d                           	popq	%rbp
+     1b6: c3                           	retq
+     1b7: 89 34 87                     	movl	%esi, (%rdi,%rax,4)
+     1ba: 8b 87 c0 00 00 00            	movl	0xc0(%rdi), %eax
+     1c0: 48 89 54 c7 40               	movq	%rdx, 0x40(%rdi,%rax,8)
+     1c5: ff c0                        	incl	%eax
+     1c7: 89 87 c0 00 00 00            	movl	%eax, 0xc0(%rdi)
+     1cd: 31 c0                        	xorl	%eax, %eax
+     1cf: 5d                           	popq	%rbp
+     1d0: c3                           	retq
+     1d1: 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 	nopw	%cs:(%rax,%rax)
+
+00000000000001e0 <mcs_lockdep_after_release>:
+     1e0: 55                           	pushq	%rbp
+     1e1: 48 89 e5                     	movq	%rsp, %rbp
+     1e4: b8 ea ff ff ff               	movl	$0xffffffea, %eax       # imm = 0xFFFFFFEA
+     1e9: 48 85 ff                     	testq	%rdi, %rdi
+     1ec: 74 2d                        	je	0x21b <mcs_lockdep_after_release+0x3b>
+     1ee: 85 f6                        	testl	%esi, %esi
+     1f0: 74 29                        	je	0x21b <mcs_lockdep_after_release+0x3b>
+     1f2: 8b 87 c0 00 00 00            	movl	0xc0(%rdi), %eax
+     1f8: 85 c0                        	testl	%eax, %eax
+     1fa: 74 21                        	je	0x21d <mcs_lockdep_after_release+0x3d>
+     1fc: ff c8                        	decl	%eax
+     1fe: 39 34 87                     	cmpl	%esi, (%rdi,%rax,4)
+     201: 75 27                        	jne	0x22a <mcs_lockdep_after_release+0x4a>
+     203: c7 04 87 00 00 00 00         	movl	$0x0, (%rdi,%rax,4)
+     20a: 48 c7 44 c7 40 00 00 00 00   	movq	$0x0, 0x40(%rdi,%rax,8)
+     213: ff 8f c0 00 00 00            	decl	0xc0(%rdi)
+     219: 31 c0                        	xorl	%eax, %eax
+     21b: 5d                           	popq	%rbp
+     21c: c3                           	retq
+     21d: ff 87 c4 00 00 00            	incl	0xc4(%rdi)
+     223: b8 ff ff ff ff               	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+     228: 5d                           	popq	%rbp
+     229: c3                           	retq
+     22a: ff 87 c4 00 00 00            	incl	0xc4(%rdi)
+     230: b8 dd ff ff ff               	movl	$0xffffffdd, %eax       # imm = 0xFFFFFFDD
+     235: 5d                           	popq	%rbp
+     236: c3                           	retq
+/usr/bin/llvm-objdump -d build/m12/mutex.o    | tee build/m12/objdump-mutex.txt
+
+build/m12/mutex.o:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000000000000 <mcs_mutex_init>:
+       0: 55                           	pushq	%rbp
+       1: 48 89 e5                     	movq	%rsp, %rbp
+       4: 48 85 ff                     	testq	%rdi, %rdi
+       7: 74 15                        	je	0x1e <mcs_mutex_init+0x1e>
+       9: c7 07 00 00 00 00            	movl	$0x0, (%rdi)
+       f: 48 c7 47 08 00 00 00 00      	movq	$0x0, 0x8(%rdi)
+      17: 89 77 10                     	movl	%esi, 0x10(%rdi)
+      1a: 48 89 57 18                  	movq	%rdx, 0x18(%rdi)
+      1e: 5d                           	popq	%rbp
+      1f: c3                           	retq
+
+0000000000000020 <mcs_mutex_try_lock>:
+      20: 55                           	pushq	%rbp
+      21: 48 89 e5                     	movq	%rsp, %rbp
+      24: b8 ea ff ff ff               	movl	$0xffffffea, %eax       # imm = 0xFFFFFFEA
+      29: 48 85 ff                     	testq	%rdi, %rdi
+      2c: 74 18                        	je	0x46 <mcs_mutex_try_lock+0x26>
+      2e: 48 85 f6                     	testq	%rsi, %rsi
+      31: 74 13                        	je	0x46 <mcs_mutex_try_lock+0x26>
+      33: b9 01 00 00 00               	movl	$0x1, %ecx
+      38: 31 c0                        	xorl	%eax, %eax
+      3a: f0                           	lock
+      3b: 0f b1 0f                     	cmpxchgl	%ecx, (%rdi)
+      3e: 75 08                        	jne	0x48 <mcs_mutex_try_lock+0x28>
+      40: 48 89 77 08                  	movq	%rsi, 0x8(%rdi)
+      44: 31 c0                        	xorl	%eax, %eax
+      46: 5d                           	popq	%rbp
+      47: c3                           	retq
+      48: 48 8b 47 08                  	movq	0x8(%rdi), %rax
+      4c: 48 39 f0                     	cmpq	%rsi, %rax
+      4f: b9 dd ff ff ff               	movl	$0xffffffdd, %ecx       # imm = 0xFFFFFFDD
+      54: b8 f0 ff ff ff               	movl	$0xfffffff0, %eax       # imm = 0xFFFFFFF0
+      59: 0f 44 c1                     	cmovel	%ecx, %eax
+      5c: 5d                           	popq	%rbp
+      5d: c3                           	retq
+      5e: 66 90                        	nop
+
+0000000000000060 <mcs_mutex_unlock>:
+      60: 55                           	pushq	%rbp
+      61: 48 89 e5                     	movq	%rsp, %rbp
+      64: b8 ea ff ff ff               	movl	$0xffffffea, %eax       # imm = 0xFFFFFFEA
+      69: 48 85 ff                     	testq	%rdi, %rdi
+      6c: 74 23                        	je	0x91 <mcs_mutex_unlock+0x31>
+      6e: 48 85 f6                     	testq	%rsi, %rsi
+      71: 74 1e                        	je	0x91 <mcs_mutex_unlock+0x31>
+      73: 48 8b 4f 08                  	movq	0x8(%rdi), %rcx
+      77: b8 ff ff ff ff               	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+      7c: 48 39 f1                     	cmpq	%rsi, %rcx
+      7f: 75 10                        	jne	0x91 <mcs_mutex_unlock+0x31>
+      81: 48 c7 47 08 00 00 00 00      	movq	$0x0, 0x8(%rdi)
+      89: c7 07 00 00 00 00            	movl	$0x0, (%rdi)
+      8f: 31 c0                        	xorl	%eax, %eax
+      91: 5d                           	popq	%rbp
+      92: c3                           	retq
+      93: 66 66 66 66 2e 0f 1f 84 00 00 00 00 00       	nopw	%cs:(%rax,%rax)
+
+00000000000000a0 <mcs_mutex_is_locked>:
+      a0: 55                           	pushq	%rbp
+      a1: 48 89 e5                     	movq	%rsp, %rbp
+      a4: 48 85 ff                     	testq	%rdi, %rdi
+      a7: 74 09                        	je	0xb2 <mcs_mutex_is_locked+0x12>
+      a9: 8b 07                        	movl	(%rdi), %eax
+      ab: 85 c0                        	testl	%eax, %eax
+      ad: 0f 95 c0                     	setne	%al
+      b0: 5d                           	popq	%rbp
+      b1: c3                           	retq
+      b2: 31 c0                        	xorl	%eax, %eax
+      b4: 5d                           	popq	%rbp
+      b5: c3                           	retq
+      b6: 66 2e 0f 1f 84 00 00 00 00 00	nopw	%cs:(%rax,%rax)
+
+00000000000000c0 <mcs_mutex_owner>:
+      c0: 55                           	pushq	%rbp
+      c1: 48 89 e5                     	movq	%rsp, %rbp
+      c4: 48 85 ff                     	testq	%rdi, %rdi
+      c7: 74 06                        	je	0xcf <mcs_mutex_owner+0xf>
+      c9: 48 8b 47 08                  	movq	0x8(%rdi), %rax
+      cd: 5d                           	popq	%rbp
+      ce: c3                           	retq
+      cf: 31 c0                        	xorl	%eax, %eax
+      d1: 5d                           	popq	%rbp
+      d2: c3                           	retq
+sha256sum \
+	build/m12/lockdep.o \
+	build/m12/spinlock.o \
+	build/m12/mutex.o \
+	build/m12/m12_sync_host_test \
+	| tee build/m12/sha256sums.txt
+32a3bbe8bda007a06427ab3fcd63fbda48afc0b1597ad4ea7c777c781d6f423c  build/m12/lockdep.o
+08ed8145960851c3da01515855499334e8f96a91b5913910f57f2dbe4eb27321  build/m12/spinlock.o
+2c69908c8b9cca18428e5280e0efe7d6314eabd0825b754a007da1e4e5e161a2  build/m12/mutex.o
+25958a193ead8077c605888475531f85528cc9bd3cdc2bfdd92b0bf022a43343  build/m12/m12_sync_host_test
+[M12] Checking no unresolved symbols...
+[M12] audit: PASS
