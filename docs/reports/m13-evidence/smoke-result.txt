@@ -1,0 +1,4 @@
+=== M13 QEMU SMOKE: PASS ===
+Kernel booted without panic after VFS integration
+Syscall dispatcher active (M10 smoke done)
+VFS objects linked: ramfs.o fd.o sys_vfs.o
