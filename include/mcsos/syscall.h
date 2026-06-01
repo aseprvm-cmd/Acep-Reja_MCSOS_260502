@@ -13,16 +13,30 @@ typedef enum mcsos_syscall_nr {
     MCSOS_SYS_WRITE_SERIAL = 2,
     MCSOS_SYS_YIELD = 3,
     MCSOS_SYS_EXIT_THREAD = 4,
-    MCSOS_SYS_MAX = 5
+    MCSOS_SYS_OPEN = 5,
+    MCSOS_SYS_READ = 6,
+    MCSOS_SYS_WRITE = 7,
+    MCSOS_SYS_CLOSE = 8,
+    MCSOS_SYS_LSEEK = 9,
+    MCSOS_SYS_MAX = 10
 } mcsos_syscall_nr_t;
 
 typedef enum mcsos_syscall_status {
     MCSOS_OK = 0,
+    MCSOS_EPERM = -1,
+    MCSOS_ENOENT = -2,
+    MCSOS_EFAULT = -14,
+    MCSOS_EBUSY = -16,
     MCSOS_EINVAL = -22,
     MCSOS_ENOSYS = -38,
-    MCSOS_EFAULT = -14,
-    MCSOS_EPERM = -1,
-    MCSOS_EBUSY = -16
+    MCSOS_EACCES = -13,
+    MCSOS_EEXIST = -17,
+    MCSOS_ENOTDIR = -20,
+    MCSOS_EISDIR = -21,
+    MCSOS_ENFILE = -23,
+    MCSOS_ENOSPC = -28,
+    MCSOS_ENAMETOOLONG = -36,
+    MCSOS_EBADF = -9
 } mcsos_syscall_status_t;
 
 typedef struct mcsos_syscall_frame {

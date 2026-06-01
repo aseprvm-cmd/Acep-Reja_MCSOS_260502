@@ -1,4 +1,19 @@
 #include "mcsos/syscall.h"
+#include "mcs_vfs.h"
+
+// Global kernel RAMFS and process for file operations
+static mcs_ramfs_t g_kernel_ramfs;
+static mcs_process_t g_kernel_main_process;
+static int g_vfs_initialized = 0;
+
+static void mcs_vfs_init_once(void) {
+    if (!g_vfs_initialized) {
+        mcs_ramfs_init(&g_kernel_ramfs);
+        g_kernel_main_process.pid = 0;
+        mcs_fd_table_init(&g_kernel_main_process.fd_table);
+        g_vfs_initialized = 1;
+    }
+}
 
 static mcsos_syscall_ops_t g_ops;
 static mcsos_user_region_t g_user_region;
@@ -84,15 +99,75 @@ static int64_t sys_exit_thread(uint64_t code, uint64_t a1, uint64_t a2,
     return MCSOS_OK;
 }
 
+// ========== VFS SYSCALL WRAPPERS ==========
+
+static int64_t sys_open(uint64_t path_ptr, uint64_t flags, uint64_t a2,
+                        uint64_t a3, uint64_t a4, uint64_t a5) {
+    (void)a2; (void)a3; (void)a4; (void)a5;
+    
+    if (path_ptr == 0u) return MCSOS_EINVAL;
+    if (flags == 0u) flags = MCS_O_RDONLY;
+    if (!mcsos_user_check_range(path_ptr, MCS_MAX_PATH)) return MCSOS_EFAULT;
+    
+    mcs_vfs_init_once();
+    return mcs_sys_open(&g_kernel_main_process, &g_kernel_ramfs,
+                       (const char *)(uintptr_t)path_ptr, (uint32_t)flags);
+}
+
+static int64_t sys_read(uint64_t fd, uint64_t buf_ptr, uint64_t len,
+                        uint64_t a3, uint64_t a4, uint64_t a5) {
+    (void)a3; (void)a4; (void)a5;
+    
+    if (buf_ptr == 0u && len != 0u) return MCSOS_EINVAL;
+    if (len > 0u && !mcsos_user_check_range(buf_ptr, len)) return MCSOS_EFAULT;
+    
+    mcs_vfs_init_once();
+    return mcs_sys_read(&g_kernel_main_process, (int)fd,
+                       (void *)(uintptr_t)buf_ptr, (size_t)len);
+}
+
+static int64_t sys_write(uint64_t fd, uint64_t buf_ptr, uint64_t len,
+                         uint64_t a3, uint64_t a4, uint64_t a5) {
+    (void)a3; (void)a4; (void)a5;
+    
+    if (buf_ptr == 0u && len != 0u) return MCSOS_EINVAL;
+    if (len > 0u && !mcsos_user_check_range(buf_ptr, len)) return MCSOS_EFAULT;
+    
+    mcs_vfs_init_once();
+    return mcs_sys_write(&g_kernel_main_process, (int)fd,
+                        (const void *)(uintptr_t)buf_ptr, (size_t)len);
+}
+
+static int64_t sys_close(uint64_t fd, uint64_t a1, uint64_t a2,
+                         uint64_t a3, uint64_t a4, uint64_t a5) {
+    (void)a1; (void)a2; (void)a3; (void)a4; (void)a5;
+    
+    mcs_vfs_init_once();
+    return mcs_sys_close(&g_kernel_main_process, (int)fd);
+}
+
+static int64_t sys_lseek(uint64_t fd, uint64_t offset, uint64_t whence,
+                         uint64_t a3, uint64_t a4, uint64_t a5) {
+    (void)a3; (void)a4; (void)a5;
+    
+    mcs_vfs_init_once();
+    return mcs_sys_lseek(&g_kernel_main_process, (int)fd, (long)offset, (int)whence);
+}
+
 typedef int64_t (*syscall_fn_t)(uint64_t, uint64_t, uint64_t,
                                 uint64_t, uint64_t, uint64_t);
 
 static syscall_fn_t g_table[MCSOS_SYS_MAX] = {
-    sys_ping,
-    sys_get_ticks,
-    sys_write_serial,
-    sys_yield,
-    sys_exit_thread
+    sys_ping,           // 0: MCSOS_SYS_PING
+    sys_get_ticks,      // 1: MCSOS_SYS_GET_TICKS
+    sys_write_serial,   // 2: MCSOS_SYS_WRITE_SERIAL
+    sys_yield,          // 3: MCSOS_SYS_YIELD
+    sys_exit_thread,    // 4: MCSOS_SYS_EXIT_THREAD
+    sys_open,           // 5: MCSOS_SYS_OPEN
+    sys_read,           // 6: MCSOS_SYS_READ
+    sys_write,          // 7: MCSOS_SYS_WRITE
+    sys_close,          // 8: MCSOS_SYS_CLOSE
+    sys_lseek           // 9: MCSOS_SYS_LSEEK
 };
 
 int64_t mcsos_syscall_dispatch(uint64_t nr, uint64_t arg0, uint64_t arg1,

@@ -119,7 +119,11 @@ $(BUILD)/syscall_entry.o \
 $(BUILD)/kernel.o \
 $(BUILD)/log.o \
 $(BUILD)/m11_elf_loader.o \
-$(BUILD)/m11_kernel_integration.o
+$(BUILD)/m11_kernel_integration.o \
+$(BUILD)/ramfs.o \
+$(BUILD)/fd.o \
+$(BUILD)/sys_vfs.o
+
 
 # --------------------------------------------------------->
 # Phony
@@ -447,3 +451,15 @@ m11-all: m11-host-test m11-freestanding m11-audit m11-qemu-smoke
 
 # =========================================================>
 # M12 — Synchronization: Spinlock, Mutex, Lockdep
+
+# ========================================
+# M13 — VFS, RAMFS, FD Table
+# ========================================
+$(BUILD)/ramfs.o: kernel/vfs/ramfs.c include/mcs_vfs.h
+> $(CC) $(CFLAGS) -c kernel/vfs/ramfs.c -o $(BUILD)/ramfs.o
+
+$(BUILD)/fd.o: kernel/vfs/fd.c include/mcs_vfs.h
+> $(CC) $(CFLAGS) -c kernel/vfs/fd.c -o $(BUILD)/fd.o
+
+$(BUILD)/sys_vfs.o: kernel/vfs/sys_vfs.c include/mcs_vfs.h
+> $(CC) $(CFLAGS) -c kernel/vfs/sys_vfs.c -o $(BUILD)/sys_vfs.o
