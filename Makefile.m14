@@ -1,0 +1,129 @@
+# ============================================================
+# Makefile for M14 Block Device Layer
+# MCSOS Practical Assignment M14
+# ============================================================
+
+# Host compiler (for unit tests)
+CC = clang
+CFLAGS = -Wall -Wextra -std=c17 -g -O0 -Iinclude
+
+# Freestanding compiler (for kernel integration)
+FREESTANDING_CC = clang
+FREESTANDING_CFLAGS = -Wall -Wextra -std=c17 -g -O0 \
+                      -ffreestanding -target x86_64-elf \
+                      -Iinclude
+FREESTANDING_LD = ld
+FREESTANDING_LDFLAGS = -r
+
+# ============================================================
+# PHONY TARGETS
+# ============================================================
+.PHONY: all clean host-test freestanding linked-relocatable audit help
+
+all: host-test
+
+# ============================================================
+# HOSTED COMPILATION (for host unit test)
+# ============================================================
+
+kernel/block/block.o: kernel/block/block.c include/mcsos/block.h
+	$(CC) $(CFLAGS) -c -o kernel/block/block.o kernel/block/block.c
+
+kernel/block/ramblk.o: kernel/block/ramblk.c include/mcsos/block.h
+	$(CC) $(CFLAGS) -c -o kernel/block/ramblk.o kernel/block/ramblk.c
+
+tests/host/test_block.o: tests/host/test_block.c include/mcsos/block.h
+	$(CC) $(CFLAGS) -c -o tests/host/test_block.o tests/host/test_block.c
+
+tests/host/test_block: kernel/block/block.o kernel/block/ramblk.o tests/host/test_block.o
+	$(CC) $(CFLAGS) -o tests/host/test_block kernel/block/block.o kernel/block/ramblk.o tests/host/test_block.o
+
+host-test: tests/host/test_block
+	@echo "=== Running Block Device Layer Host Tests ==="
+	./tests/host/test_block
+
+# ============================================================
+# FREESTANDING COMPILATION (for kernel integration)
+# ============================================================
+
+kernel/block/block.fs.o: kernel/block/block.c include/mcsos/block.h
+	@mkdir -p artifacts/m14
+	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) -c -o kernel/block/block.fs.o kernel/block/block.c
+
+kernel/block/ramblk.fs.o: kernel/block/ramblk.c include/mcsos/block.h
+	@mkdir -p artifacts/m14
+	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) -c -o kernel/block/ramblk.fs.o kernel/block/ramblk.c
+
+freestanding: kernel/block/block.fs.o kernel/block/ramblk.fs.o
+	@echo "=== Freestanding x86_64-elf Objects Compiled ==="
+	@file kernel/block/block.fs.o kernel/block/ramblk.fs.o
+	@ls -lh kernel/block/block.fs.o kernel/block/ramblk.fs.o
+
+# ============================================================
+# LINKED RELOCATABLE (aggregate object)
+# ============================================================
+
+linked-relocatable: freestanding
+	@echo "=== Linking Relocatable Object ==="
+	$(FREESTANDING_LD) $(FREESTANDING_LDFLAGS) -o artifacts/m14/block_layer.o \
+		kernel/block/block.fs.o kernel/block/ramblk.fs.o
+	@echo "Linked: artifacts/m14/block_layer.o"
+	@file artifacts/m14/block_layer.o
+
+# ============================================================
+# AUDIT & VERIFICATION
+# ============================================================
+
+audit: linked-relocatable
+	@echo "=== AUDIT: Block Layer Objects (Freestanding x86_64-elf) ==="
+	@echo ""
+	@echo "--- 1. File Type ---"
+	@file artifacts/m14/block_layer.o
+	@echo ""
+	@echo "--- 2. Undefined Symbols (should be EMPTY) ---"
+	@nm -u artifacts/m14/block_layer.o || echo "   [OK] No undefined symbols"
+	@echo ""
+	@echo "--- 3. ELF Header ---"
+	@readelf -h artifacts/m14/block_layer.o
+	@echo ""
+	@echo "--- 4. Section Headers (first 20 lines) ---"
+	@readelf -S artifacts/m14/block_layer.o | head -20
+	@echo ""
+	@echo "--- 5. Symbol Table (first 30 lines) ---"
+	@nm artifacts/m14/block_layer.o | head -30
+	@echo ""
+	@echo "--- 6. Disassembly (first 100 lines) ---"
+	@objdump -dr artifacts/m14/block_layer.o | head -100
+	@echo ""
+	@echo "--- 7. Checksum (SHA256) ---"
+	@sha256sum artifacts/m14/block_layer.o | tee artifacts/m14/block_layer.sha256
+	@echo ""
+	@echo "=== AUDIT COMPLETE ==="
+
+# ============================================================
+# CLEAN
+# ============================================================
+
+clean:
+	@echo "Cleaning M14 artifacts..."
+	rm -f kernel/block/block.o kernel/block/ramblk.o
+	rm -f kernel/block/block.fs.o kernel/block/ramblk.fs.o
+	rm -f tests/host/test_block.o tests/host/test_block
+	rm -f artifacts/m14/block_layer.o artifacts/m14/block_layer.sha256
+	@echo "Clean done"
+
+# ============================================================
+# HELP
+# ============================================================
+
+help:
+	@echo "M14 Block Device Layer Makefile"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make host-test             - Compile and run host unit tests (default)"
+	@echo "  make freestanding          - Compile freestanding x86_64-elf objects"
+	@echo "  make linked-relocatable    - Link freestanding objects into relocatable object"
+	@echo "  make audit                 - Full audit: link + readelf + nm + objdump + checksum"
+	@echo "  make clean                 - Remove all build artifacts"
+	@echo "  make help                  - Show this help message"
+	@echo ""
