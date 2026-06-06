@@ -463,3 +463,36 @@ $(BUILD)/fd.o: kernel/vfs/fd.c include/mcs_vfs.h
 
 $(BUILD)/sys_vfs.o: kernel/vfs/sys_vfs.c include/mcs_vfs.h
 > $(CC) $(CFLAGS) -c kernel/vfs/sys_vfs.c -o $(BUILD)/sys_vfs.o
+
+# ========================================
+
+# ========================================
+# M15 — MCSFS1 Filesystem
+# ========================================
+M15_OUT  := artifacts/m15
+M15_SRC  := fs/mcsfs1/mcsfs1.c
+M15_HDR  := fs/mcsfs1/mcsfs1.h
+M15_TEST := tests/m15/test_mcsfs1.c
+
+m15-host-test: $(M15_SRC) $(M15_HDR) $(M15_TEST)
+> @mkdir -p $(M15_OUT)
+> $(CC) -Wall -Wextra -std=c11 -O2 \
+> 	$(M15_TEST) $(M15_SRC) \
+> 	-o $(M15_OUT)/test_mcsfs1
+> @echo "[M15] host test binary built"
+
+m15-freestanding: $(M15_SRC) $(M15_HDR)
+> @mkdir -p $(M15_OUT)
+> $(CC) -Wall -Wextra -std=c11 -O2 \
+> 	-ffreestanding -nostdlib -nostdinc \
+> 	-isystem /usr/lib/llvm-18/lib/clang/18/include \
+> 	-target x86_64-pc-none-elf \
+> 	-I fs/mcsfs1 \
+> 	-c $(M15_SRC) \
+> 	-o $(M15_OUT)/mcsfs1.rel.o
+> @echo "[M15] freestanding object built"
+
+m15-all: m15-host-test m15-freestanding
+> @echo "[M15] all targets done"
+
+.PHONY: m15-host-test m15-freestanding m15-all

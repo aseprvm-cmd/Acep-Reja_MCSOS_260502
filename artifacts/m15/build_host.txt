@@ -1,0 +1,4 @@
+clang -Wall -Wextra -std=c11 -O2 \
+ 	tests/m15/test_mcsfs1.c fs/mcsfs1/mcsfs1.c \
+ 	-o artifacts/m15/test_mcsfs1
+[M15] host test binary built

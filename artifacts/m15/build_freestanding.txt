@@ -1,0 +1,8 @@
+clang -Wall -Wextra -std=c11 -O2 \
+ 	-ffreestanding -nostdlib -nostdinc \
+ 	-isystem /usr/lib/llvm-18/lib/clang/18/include \
+ 	-target x86_64-pc-none-elf \
+ 	-I fs/mcsfs1 \
+ 	-c fs/mcsfs1/mcsfs1.c \
+ 	-o artifacts/m15/mcsfs1.rel.o
+[M15] freestanding object built
